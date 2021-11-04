@@ -1,9 +1,6 @@
 import React from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-
-//import "leaflet/dist/images";
-
 import { currentLocationIcon } from "../utils/CurrentLocationIcon";
 import { homeIcon } from "../utils/HomeIcon";
 import {
@@ -29,8 +26,8 @@ const MainMap: React.FC = () => {
         </Marker>
 
         <Marker position={homeLocation} icon={homeIcon}></Marker>
-        {stops.map((i) => (
-          <Stop info={i}></Stop>
+        {stops.map((i, index) => (
+          <Stop info={i} key={index}></Stop>
         ))}
       </MapContainer>
     </div>

@@ -7,4 +7,6 @@ export interface StopInfo {
   statePark: boolean;
   nationalPark: boolean;
   nationalMonument: boolean;
+  arrivalDate: Date;
+  departureDate: Date;
 }

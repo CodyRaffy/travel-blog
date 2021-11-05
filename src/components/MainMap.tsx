@@ -1,8 +1,13 @@
 import React from "react";
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { currentLocationIcon } from "../utils/CurrentLocationIcon";
-import { homeIcon } from "../utils/HomeIcon";
 import {
   centerOfUsa,
   currentLocation,
@@ -10,6 +15,7 @@ import {
 } from "../data/ImportantMarkers";
 import { stops } from "../data/Stops";
 import Stop from "./Stop";
+import { markerIcon } from "../utils/MarkerIcon";
 
 const MainMap: React.FC = () => {
   return (
@@ -25,11 +31,14 @@ const MainMap: React.FC = () => {
           </Popup>
         </Marker>
 
-        <Marker position={homeLocation} icon={homeIcon}></Marker>
+        <Marker position={homeLocation} icon={markerIcon}></Marker>
+
         {stops.map((i, index) => (
           <>
-          <Stop info={i} key={index}></Stop>
-          {i.polyline && (<Polyline key={index} positions={i.polyline} color={'red'} />)}
+            <Stop info={i} key={index}></Stop>
+            {i.polyline && (
+              <Polyline key={index} positions={i.polyline} color={"red"} />
+            )}
           </>
         ))}
       </MapContainer>

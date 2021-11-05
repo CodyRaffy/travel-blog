@@ -1,5 +1,5 @@
 import React from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { currentLocationIcon } from "../utils/CurrentLocationIcon";
 import { homeIcon } from "../utils/HomeIcon";
@@ -27,7 +27,10 @@ const MainMap: React.FC = () => {
 
         <Marker position={homeLocation} icon={homeIcon}></Marker>
         {stops.map((i, index) => (
+          <>
           <Stop info={i} key={index}></Stop>
+          {i.polyline && (<Polyline key={index} positions={i.polyline} color={'red'} />)}
+          </>
         ))}
       </MapContainer>
     </div>

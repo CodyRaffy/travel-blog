@@ -5,8 +5,9 @@ export interface StopInfo {
   latLongTuple: LatLngTuple;
   link: string;
   statePark: boolean;
-  nationalPark: boolean;
   nationalMonument: boolean;
+  nationalPark: boolean;
   arrivalDate: Date;
   departureDate: Date;
+  polyline: LatLngTuple[] | null;
 }

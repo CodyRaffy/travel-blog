@@ -36,9 +36,11 @@ const MainMap: React.FC = () => {
         {stops.map((i, index) => (
           <>
             <Stop info={i} key={index}></Stop>
-            {i.polyline && (
-              <Polyline key={index} positions={i.polyline} color={"red"} />
-            )}
+            <Polyline
+              key={index}
+              positions={i.journeyLatLongTuples}
+              color={index % 2 === 0 ? "red" : "blue"}
+            />
           </>
         ))}
       </MapContainer>

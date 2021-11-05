@@ -9,5 +9,5 @@ export interface StopInfo {
   nationalPark: boolean;
   arrivalDate: Date;
   departureDate: Date;
-  polyline: LatLngTuple[] | null;
+  journeyLatLongTuples: LatLngTuple[];
 }

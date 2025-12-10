@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(copy \"C:\\Code\\travel-blog\\src\\utils\\leaflet\\*\" \"C:\\Code\\travel-blog\\public\\leaflet\"\" && copy \"C:Codetravel-blogsrcimg*\" \"C:Codetravel-blogpublicimg\"\")",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "WebSearch",
+      "Bash(npm view:*)",
+      "Bash(node --version)",
+      "Bash(npm install:*)",
+      "Bash(npm run build)",
+      "Bash(timeout 10 npm run dev:*)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

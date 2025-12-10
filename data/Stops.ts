@@ -1,4 +1,4 @@
-import { StopInfo } from "../models/StopInfo";
+import { StopInfo } from "@/models/StopInfo";
 import { homeLocation } from "./ImportantMarkers";
 
 export const stops: StopInfo[] = [

@@ -1,26 +1,17 @@
-import React from "react";
-import {
-  MapContainer,
-  Marker,
-  Polyline,
-  Popup,
-  TileLayer,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { currentLocationIcon } from "../utils/CurrentLocationIcon";
-import {
-  centerOfUsa,
-  currentLocation,
-  homeLocation,
-} from "../data/ImportantMarkers";
-import { stops } from "../data/Stops";
-import Stop from "./Stop";
-import { markerIcon } from "../utils/MarkerIcon";
+"use client";
 
-const MainMap: React.FC = () => {
+import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { currentLocationIcon } from "@/utils/CurrentLocationIcon";
+import { centerOfUsa, currentLocation, homeLocation } from "@/data/ImportantMarkers";
+import { stops } from "@/data/Stops";
+import Stop from "./Stop";
+import { markerIcon } from "@/utils/MarkerIcon";
+
+const MainMap = () => {
   return (
     <div className="leaflet-container">
-      <MapContainer center={centerOfUsa} zoom={5}>
+      <MapContainer center={centerOfUsa} zoom={5} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -33,15 +24,14 @@ const MainMap: React.FC = () => {
 
         <Marker position={homeLocation} icon={markerIcon}></Marker>
 
-        {stops.map((i, index) => (
-          <>
-            <Stop info={i} key={index}></Stop>
+        {stops.map((stop, index) => (
+          <div key={index}>
+            <Stop info={stop} />
             <Polyline
-              key={index}
-              positions={i.journeyLatLongTuples}
+              positions={stop.journeyLatLongTuples}
               color={index % 2 === 0 ? "red" : "blue"}
             />
-          </>
+          </div>
         ))}
       </MapContainer>
     </div>

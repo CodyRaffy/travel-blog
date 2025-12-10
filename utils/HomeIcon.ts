@@ -1,10 +1,9 @@
 import L from "leaflet";
-import icon from "./../img/Home.jpg";
 
 const homeIcon = new L.Icon({
-  iconUrl: icon,
-  iconRetinaUrl: icon,
-  iconSize: new L.Point(60, 40),
+  iconUrl: "/img/Home.jpg",
+  iconRetinaUrl: "/img/Home.jpg",
+  iconSize: new L.Point(30, 40),
   className: "leaflet-div-icon",
 });
 

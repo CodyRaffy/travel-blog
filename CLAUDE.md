@@ -16,13 +16,16 @@ This is a Next.js 16 (App Router) TypeScript travel blog application that displa
 ### Project Structure
 
 ```
-app/           - Next.js App Router pages and layouts
-app/api/       - API route handlers
-components/    - React components
-data/          - Static data (stops, markers)
-models/        - TypeScript interfaces
-utils/         - Utility functions (map icons)
-public/        - Static assets (images, leaflet icons)
+app/              - Next.js App Router pages and layouts
+app/api/          - API route handlers
+app/admin/        - Admin pages for managing stops
+components/       - React components
+components/admin/ - Admin-specific components
+data/             - JSON data storage (stops.json)
+lib/              - Server-side data access functions
+models/           - TypeScript interfaces
+utils/            - Utility functions (map icons)
+public/           - Static assets (images, leaflet icons)
 ```
 
 ### Core Components
@@ -31,14 +34,29 @@ public/        - Static assets (images, leaflet icons)
 - **components/MainMap.tsx** - Main map component using react-leaflet, displays current location, home, all stops with connecting polylines
 - **components/Stop.tsx** - Renders individual stop markers
 
+### Admin Pages
+
+- **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
+- **app/admin/add/page.tsx** - Form to create new stop with map location picker
+- **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
+
+### Admin Components
+
+- **components/admin/StopList.tsx** - Table displaying stops with actions
+- **components/admin/StopForm.tsx** - Reusable form for stop details
+- **components/admin/LocationPicker.tsx** - Map for selecting stop location
+- **components/admin/WaypointEditor.tsx** - Interactive map for adding/removing journey waypoints
+
 ### API Routes
 
-- **app/api/stops/route.ts** - GET endpoint that returns stops data as JSON. Currently reads from static data but designed for easy database migration.
+- **app/api/stops/route.ts** - GET all stops, POST create new stop
+- **app/api/stops/[id]/route.ts** - GET, PUT, DELETE single stop
 
 ### Data Layer
 
-- **models/StopInfo.ts** - TypeScript interfaces: `StopInfo` (with Date objects) and `StopInfoResponse` (with serialized date strings for API responses)
-- **data/Stops.ts** - Array of StopInfo objects with detailed journey coordinates (used as data source for API)
+- **lib/stops.ts** - Data access functions (getStops, createStop, updateStop, deleteStop)
+- **data/stops.json** - JSON file storing all stops (persists across restarts)
+- **models/StopInfo.ts** - TypeScript interfaces: `StopInfo`, `StopInfoResponse`, `CreateStopInput`, `UpdateStopInput`
 - **data/ImportantMarkers.ts** - Fixed locations (current location, home, center of USA)
 
 ### Leaflet Integration

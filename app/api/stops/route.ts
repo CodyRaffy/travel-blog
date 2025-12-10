@@ -1,25 +1,15 @@
-import { NextResponse } from "next/server";
-import { stops } from "@/data/Stops";
-
-// Simulates a database fetch with artificial delay
-async function getStopsFromDatabase() {
-  // Simulate database latency
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // In the future, this would be replaced with actual database query:
-  // const stops = await db.query("SELECT * FROM stops");
-  return stops;
-}
+import { NextRequest, NextResponse } from "next/server";
+import { getStops, createStop } from "@/lib/stops";
+import { CreateStopInput } from "@/models/StopInfo";
 
 export async function GET() {
-  const stopsData = await getStopsFromDatabase();
+  const stops = await getStops();
+  return NextResponse.json(stops);
+}
 
-  // Convert dates to ISO strings for JSON serialization
-  const serializedStops = stopsData.map((stop) => ({
-    ...stop,
-    arrivalDate: stop.arrivalDate.toISOString(),
-    departureDate: stop.departureDate.toISOString(),
-  }));
+export async function POST(request: NextRequest) {
+  const body: CreateStopInput = await request.json();
 
-  return NextResponse.json(serializedStops);
+  const newStop = await createStop(body);
+  return NextResponse.json(newStop, { status: 201 });
 }

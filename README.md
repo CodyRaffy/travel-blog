@@ -11,6 +11,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the map.
 
+Open [http://localhost:3000/admin](http://localhost:3000/admin) to manage stops.
+
 ## Scripts
 
 - `npm run dev` - Start development server
@@ -21,6 +23,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the map.
 ## API Routes
 
 - `GET /api/stops` - Returns all trip stops as JSON
+- `POST /api/stops` - Create a new stop
+- `GET /api/stops/[id]` - Get a single stop
+- `PUT /api/stops/[id]` - Update a stop
+- `DELETE /api/stops/[id]` - Delete a stop
 
 ## Tech Stack
 

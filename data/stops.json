@@ -1,19 +1,16 @@
-import { homeLocation } from "./ImportantMarkers";
-
-// Legacy data file - stops are now stored in stops.json and managed via API
-// This file is kept for reference only
-export const legacyStops = [
+[
   {
-    name: "Torreya State Park",
-    latLongTuple: [30.569744223517564, -84.95110673652559],
-    link: "https://www.floridastateparks.org/parks-and-trails/torreya-state-park",
-    statePark: true,
-    nationalMonument: false,
-    nationalPark: false,
-    arrivalDate: new Date("02/07/2021"),
-    departureDate: new Date("02/12/2021"),
-    journeyLatLongTuples: [
-      homeLocation,
+    "id": "stop-1",
+    "name": "Torreya State Park",
+    "latLongTuple": [30.569744223517564, -84.95110673652559],
+    "link": "https://www.floridastateparks.org/parks-and-trails/torreya-state-park",
+    "statePark": true,
+    "nationalMonument": false,
+    "nationalPark": false,
+    "arrivalDate": "2021-02-07T05:00:00.000Z",
+    "departureDate": "2021-02-12T05:00:00.000Z",
+    "journeyLatLongTuples": [
+      [30.516974975572815, -84.22185018565166],
       [30.515633568318194, -84.22454203327416],
       [30.513709214499805, -84.2233010738722],
       [30.512098429794424, -84.22657720669336],
@@ -49,19 +46,20 @@ export const legacyStops = [
       [30.54797336514776, -84.94031080100963],
       [30.56959568491465, -84.94640254781129],
       [30.568316391821934, -84.9490026836413],
-      [30.569744223517564, -84.95110673652559],
-    ],
+      [30.569744223517564, -84.95110673652559]
+    ]
   },
   {
-    name: "Blackwater River State Park",
-    latLongTuple: [30.711958657572282, -86.87860216834461],
-    link: "https://www.floridastateparks.org/parks-and-trails/blackwater-river-state-park",
-    statePark: true,
-    nationalMonument: false,
-    nationalPark: false,
-    arrivalDate: new Date("02/12/2021"),
-    departureDate: new Date("02/13/2021"),
-    journeyLatLongTuples: [
+    "id": "stop-2",
+    "name": "Blackwater River State Park",
+    "latLongTuple": [30.711958657572282, -86.87860216834461],
+    "link": "https://www.floridastateparks.org/parks-and-trails/blackwater-river-state-park",
+    "statePark": true,
+    "nationalMonument": false,
+    "nationalPark": false,
+    "arrivalDate": "2021-02-12T05:00:00.000Z",
+    "departureDate": "2021-02-13T05:00:00.000Z",
+    "journeyLatLongTuples": [
       [30.569744223517564, -84.95110673652559],
       [30.54340304911792, -84.91405074046057],
       [30.548147955549673, -84.90649486062327],
@@ -82,21 +80,22 @@ export const legacyStops = [
       [30.714172162088882, -86.74905988082328],
       [30.68185908467532, -86.83888292975725],
       [30.685800283099784, -86.87646196043372],
-      [30.711808157475545, -86.87921164560515],
-    ],
+      [30.711808157475545, -86.87921164560515]
+    ]
   },
   {
-    name: "St. Bernard State Park",
-    latLongTuple: [29.864355474069658, -89.90035309083517],
-    link: "https://www.floridastateparks.org/parks-and-trails/torreya-state-park",
-    statePark: true,
-    nationalMonument: false,
-    nationalPark: false,
-    arrivalDate: new Date("02/13/2021"),
-    departureDate: new Date("02/20/2021"),
-    journeyLatLongTuples: [
+    "id": "stop-3",
+    "name": "St. Bernard State Park",
+    "latLongTuple": [29.864355474069658, -89.90035309083517],
+    "link": "https://www.floridastateparks.org/parks-and-trails/torreya-state-park",
+    "statePark": true,
+    "nationalMonument": false,
+    "nationalPark": false,
+    "arrivalDate": "2021-02-13T05:00:00.000Z",
+    "departureDate": "2021-02-20T05:00:00.000Z",
+    "journeyLatLongTuples": [
       [30.711958657572282, -86.87860216834461],
-      [29.864355474069658, -89.90035309083517],
-    ],
-  },
-];
+      [29.864355474069658, -89.90035309083517]
+    ]
+  }
+]

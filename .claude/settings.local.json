@@ -11,7 +11,9 @@
       "Bash(npm run build)",
       "Bash(timeout 10 npm run dev:*)",
       "WebFetch(domain:github.com)",
-      "Bash(npm outdated:*)"
+      "Bash(npm outdated:*)",
+      "Bash(if not exist \"C:\\Code\\travel-blog\\app\\api\\stops\" mkdir \"C:\\Code\\travel-blog\\app\\api\\stops\")",
+      "Bash(mkdir:*)"
     ]
   }
 }

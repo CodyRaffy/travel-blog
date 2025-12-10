@@ -17,6 +17,7 @@ This is a Next.js 16 (App Router) TypeScript travel blog application that displa
 
 ```
 app/           - Next.js App Router pages and layouts
+app/api/       - API route handlers
 components/    - React components
 data/          - Static data (stops, markers)
 models/        - TypeScript interfaces
@@ -30,10 +31,14 @@ public/        - Static assets (images, leaflet icons)
 - **components/MainMap.tsx** - Main map component using react-leaflet, displays current location, home, all stops with connecting polylines
 - **components/Stop.tsx** - Renders individual stop markers
 
+### API Routes
+
+- **app/api/stops/route.ts** - GET endpoint that returns stops data as JSON. Currently reads from static data but designed for easy database migration.
+
 ### Data Layer
 
-- **models/StopInfo.ts** - TypeScript interface defining stop structure (name, coordinates, dates, journey polyline points, park type flags)
-- **data/Stops.ts** - Array of StopInfo objects with detailed journey coordinates
+- **models/StopInfo.ts** - TypeScript interfaces: `StopInfo` (with Date objects) and `StopInfoResponse` (with serialized date strings for API responses)
+- **data/Stops.ts** - Array of StopInfo objects with detailed journey coordinates (used as data source for API)
 - **data/ImportantMarkers.ts** - Fixed locations (current location, home, center of USA)
 
 ### Leaflet Integration

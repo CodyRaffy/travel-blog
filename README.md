@@ -18,6 +18,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the map.
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
+## API Routes
+
+- `GET /api/stops` - Returns all trip stops as JSON
+
 ## Tech Stack
 
 - [Next.js 16](https://nextjs.org/) (App Router, Turbopack)

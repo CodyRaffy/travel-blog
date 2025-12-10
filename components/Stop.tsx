@@ -1,11 +1,11 @@
 "use client";
 
 import { Marker } from "react-leaflet";
-import { StopInfo } from "@/models/StopInfo";
+import { StopInfo, StopInfoResponse } from "@/models/StopInfo";
 import { markerIcon } from "@/utils/MarkerIcon";
 
 interface StopProps {
-  info: StopInfo;
+  info: StopInfo | StopInfoResponse;
 }
 
 const Stop = ({ info }: StopProps) => {

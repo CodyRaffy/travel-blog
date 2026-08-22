@@ -1,73 +1,116 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { asc, eq } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
+import type { StopRow } from "@/lib/db/schema";
 import { StopInfoResponse, CreateStopInput, UpdateStopInput } from "@/models/StopInfo";
+import { slugify } from "@/lib/slug";
 
-const DATA_FILE = path.join(process.cwd(), "data", "stops.json");
+const { stops } = schema;
+
+function toResponse(row: StopRow): StopInfoResponse {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    description: row.description,
+    latLongTuple: [row.latitude, row.longitude],
+    link: row.link,
+    statePark: row.statePark,
+    nationalMonument: row.nationalMonument,
+    nationalPark: row.nationalPark,
+    arrivalDate: row.arrivalDate,
+    departureDate: row.departureDate,
+    journeyLatLongTuples: row.journeyLatLongTuples,
+    coverPhotoId: row.coverPhotoId,
+  };
+}
+
+/** Returns a slug derived from `name` that no other stop (except `excludeId`) is using. */
+function uniqueSlug(name: string, excludeId?: string): string {
+  const base = slugify(name) || "stop";
+  const taken = new Set(
+    db
+      .select({ id: stops.id, slug: stops.slug })
+      .from(stops)
+      .all()
+      .filter((s) => s.id !== excludeId)
+      .map((s) => s.slug)
+  );
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) {
+    const candidate = `${base}-${n}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
 
 export async function getStops(): Promise<StopInfoResponse[]> {
-  const data = await fs.readFile(DATA_FILE, "utf-8");
-  return JSON.parse(data);
+  return db.select().from(stops).orderBy(asc(stops.arrivalDate)).all().map(toResponse);
 }
 
 export async function getStopById(id: string): Promise<StopInfoResponse | null> {
-  const stops = await getStops();
-  return stops.find((stop) => stop.id === id) || null;
+  const row = db.select().from(stops).where(eq(stops.id, id)).get();
+  return row ? toResponse(row) : null;
+}
+
+export async function getStopBySlug(slug: string): Promise<StopInfoResponse | null> {
+  const row = db.select().from(stops).where(eq(stops.slug, slug)).get();
+  return row ? toResponse(row) : null;
 }
 
 export async function createStop(input: CreateStopInput): Promise<StopInfoResponse> {
-  const stops = await getStops();
+  const row = db
+    .insert(stops)
+    .values({
+      id: crypto.randomUUID(),
+      slug: uniqueSlug(input.name),
+      name: input.name,
+      description: input.description ?? null,
+      latitude: input.latLongTuple[0],
+      longitude: input.latLongTuple[1],
+      link: input.link ?? "",
+      statePark: input.statePark ?? false,
+      nationalMonument: input.nationalMonument ?? false,
+      nationalPark: input.nationalPark ?? false,
+      arrivalDate: input.arrivalDate,
+      departureDate: input.departureDate,
+      journeyLatLongTuples: [],
+    })
+    .returning()
+    .get();
 
-  const newStop: StopInfoResponse = {
-    id: crypto.randomUUID(),
-    name: input.name,
-    latLongTuple: input.latLongTuple,
-    link: input.link,
-    statePark: input.statePark,
-    nationalMonument: input.nationalMonument,
-    nationalPark: input.nationalPark,
-    arrivalDate: input.arrivalDate,
-    departureDate: input.departureDate,
-    journeyLatLongTuples: [],
-  };
-
-  stops.push(newStop);
-  await fs.writeFile(DATA_FILE, JSON.stringify(stops, null, 2));
-
-  return newStop;
+  return toResponse(row);
 }
 
 export async function updateStop(
   id: string,
   input: UpdateStopInput
 ): Promise<StopInfoResponse | null> {
-  const stops = await getStops();
-  const index = stops.findIndex((stop) => stop.id === id);
+  const existing = db.select().from(stops).where(eq(stops.id, id)).get();
+  if (!existing) return null;
 
-  if (index === -1) {
-    return null;
+  const patch: Partial<typeof stops.$inferInsert> = { updatedAt: new Date().toISOString() };
+  if (input.name !== undefined) {
+    patch.name = input.name;
+    if (input.name !== existing.name) patch.slug = uniqueSlug(input.name, id);
   }
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.latLongTuple !== undefined) {
+    patch.latitude = input.latLongTuple[0];
+    patch.longitude = input.latLongTuple[1];
+  }
+  if (input.link !== undefined) patch.link = input.link;
+  if (input.statePark !== undefined) patch.statePark = input.statePark;
+  if (input.nationalMonument !== undefined) patch.nationalMonument = input.nationalMonument;
+  if (input.nationalPark !== undefined) patch.nationalPark = input.nationalPark;
+  if (input.arrivalDate !== undefined) patch.arrivalDate = input.arrivalDate;
+  if (input.departureDate !== undefined) patch.departureDate = input.departureDate;
+  if (input.journeyLatLongTuples !== undefined) patch.journeyLatLongTuples = input.journeyLatLongTuples;
+  if (input.coverPhotoId !== undefined) patch.coverPhotoId = input.coverPhotoId;
 
-  const updatedStop: StopInfoResponse = {
-    ...stops[index],
-    ...input,
-  };
-
-  stops[index] = updatedStop;
-  await fs.writeFile(DATA_FILE, JSON.stringify(stops, null, 2));
-
-  return updatedStop;
+  const row = db.update(stops).set(patch).where(eq(stops.id, id)).returning().get();
+  return row ? toResponse(row) : null;
 }
 
 export async function deleteStop(id: string): Promise<boolean> {
-  const stops = await getStops();
-  const index = stops.findIndex((stop) => stop.id === id);
-
-  if (index === -1) {
-    return false;
-  }
-
-  stops.splice(index, 1);
-  await fs.writeFile(DATA_FILE, JSON.stringify(stops, null, 2));
-
-  return true;
+  const result = db.delete(stops).where(eq(stops.id, id)).run();
+  return result.changes > 0;
 }

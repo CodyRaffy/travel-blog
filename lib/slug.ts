@@ -1,0 +1,9 @@
+/** "Moab, UT" -> "moab-ut". URL-safe, lowercase, ASCII only. */
+export function slugify(input: string): string {
+  return input
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

@@ -55,6 +55,9 @@ export default function AdminPage() {
           <Link href="/" style={{ marginRight: "16px", color: "#0070f3" }}>
             View Map
           </Link>
+          <Link href="/admin/posts" style={{ marginRight: "16px", color: "#0070f3" }}>
+            Posts
+          </Link>
           <Link
             href="/admin/add"
             style={{

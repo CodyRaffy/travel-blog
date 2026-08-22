@@ -1,0 +1,299 @@
+<title>Raffy's Road Revival</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f6f8f5;
+    --card: #ffffff;
+    --ink: #23312b;
+    --muted: #5d6e64;
+    --line: #d8e0d9;
+    --accent: #2e6b4f;        /* highway-sign green */
+    --accent-soft: #e3ede6;
+    --route: #b5472f;         /* route-marker red, used sparingly */
+    --code-bg: #edf2ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #141a16;
+      --card: #1c2420;
+      --ink: #e4eae5;
+      --muted: #9fb0a5;
+      --line: #32403a;
+      --accent: #6fb08d;
+      --accent-soft: #24352c;
+      --route: #d97f62;
+      --code-bg: #232e28;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #141a16;
+    --card: #1c2420;
+    --ink: #e4eae5;
+    --muted: #9fb0a5;
+    --line: #32403a;
+    --accent: #6fb08d;
+    --accent-soft: #24352c;
+    --route: #d97f62;
+    --code-bg: #232e28;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 1.25rem;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 0 5rem; }
+
+  h1, h2, h3 { font-family: "Zilla Slab", Georgia, serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: 2.6rem; font-weight: 700; line-height: 1.1; }
+  h2 { font-size: 1.5rem; font-weight: 600; }
+  h3 { font-size: 1.125rem; font-weight: 600; }
+  p { margin: 0.75rem 0; }
+  a { color: var(--accent); }
+  code, .mono {
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+
+  .eyebrow {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--route);
+    margin-bottom: 0.75rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-top: 1rem; max-width: 40rem; }
+
+  /* Decisions table */
+  .decisions {
+    margin: 2.5rem 0 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  .decisions .row {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 1rem;
+    padding: 0.8rem 1.1rem;
+    border-top: 1px solid var(--line);
+  }
+  .decisions .row:first-child { border-top: none; }
+  .decisions .k {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); padding-top: 0.2rem;
+  }
+  @media (max-width: 540px) {
+    .decisions .row { grid-template-columns: 1fr; gap: 0.15rem; }
+  }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: flex; flex-direction: column; gap: 0.6rem;
+    margin: 1.5rem 0 0; padding: 1.25rem;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+    overflow-x: auto;
+  }
+  .flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .flow .src {
+    font-weight: 700; font-size: 0.9rem; color: var(--ink);
+    min-width: 9.5rem;
+  }
+  .chip {
+    font-size: 0.82rem; font-weight: 600; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent);
+    border-radius: 999px; padding: 0.22em 0.75em;
+  }
+  .chip.end { background: var(--accent); color: var(--card); }
+  .arrow { color: var(--muted); font-size: 0.85rem; }
+
+  /* Route timeline of phases */
+  .route-line { margin-top: 3.5rem; position: relative; }
+  .phase {
+    position: relative;
+    padding: 0 0 2.75rem 3.4rem;
+  }
+  .phase::before {          /* the dashed highway centerline */
+    content: "";
+    position: absolute; left: 1.05rem; top: 2.4rem; bottom: -0.2rem;
+    border-left: 3px dashed var(--line);
+  }
+  .phase:last-child::before { display: none; }
+  .marker {                 /* mile marker */
+    position: absolute; left: 0; top: 0;
+    width: 2.2rem; height: 2.2rem; border-radius: 8px;
+    background: var(--accent); color: var(--card);
+    font-family: "Zilla Slab", Georgia, serif; font-weight: 700; font-size: 1.05rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+  }
+  .phase-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; padding-top: 0.2rem; }
+  .phase-meta { font-size: 0.82rem; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; }
+  .phase p.summary { color: var(--muted); margin-top: 0.35rem; }
+  .phase ul { margin: 0.75rem 0 0; padding-left: 1.2rem; }
+  .phase li { margin: 0.45rem 0; }
+  .phase li::marker { color: var(--accent); }
+
+  .you {
+    margin-top: 1rem; padding: 0.85rem 1.1rem;
+    background: var(--accent-soft); border-radius: 8px;
+    font-size: 0.95rem;
+  }
+  .you strong { color: var(--accent); }
+
+  .section { margin-top: 3.5rem; }
+  .section > p { max-width: 42rem; }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .tablewrap table { margin-top: 0; }
+  .tablewrap tr:last-child td { border-bottom: none; }
+
+  footer { margin-top: 4rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Build plan &middot; August 2026</div>
+    <h1>Raffy's Road Revival</h1>
+    <p class="lede">Turning the prototype map into the real record of 3&ndash;4 years on the road &mdash; with the trip history reconstructed automatically from Dropbox photo metadata and the Facebook posts imported as the blog.</p>
+  </header>
+
+  <div class="decisions">
+    <div class="row"><div class="k">Facebook posts</div><div>Imported from a one-time <strong>&ldquo;Download your information&rdquo;</strong> JSON export &mdash; no developer app or API review needed.</div></div>
+    <div class="row"><div class="k">Photo library</div><div>Read remotely via the <strong>Dropbox API</strong> (metadata first &mdash; originals are only downloaded for curated photos).</div></div>
+    <div class="row"><div class="k">Hosting</div><div>Your <strong>home server</strong>, exposed through a <strong>Cloudflare Tunnel</strong>. This makes SQLite + local disk the right storage &mdash; no cloud database needed.</div></div>
+    <div class="row"><div class="k">Photos on site</div><div><strong>Curated per stop</strong> &mdash; the importer suggests, you approve in the admin UI.</div></div>
+    <div class="row"><div class="k">Admin security</div><div><strong>Cloudflare Access</strong> policy on <code>/admin</code> and <code>/api</code> writes &mdash; login enforced at the tunnel, zero auth code in the app.</div></div>
+  </div>
+
+  <div class="pipeline">
+    <div class="flow">
+      <span class="src">Dropbox photos</span>
+      <span class="chip">EXIF scan</span><span class="arrow">&rarr;</span>
+      <span class="chip">cluster by time + place</span><span class="arrow">&rarr;</span>
+      <span class="chip">you review</span><span class="arrow">&rarr;</span>
+      <span class="chip end">Stops</span>
+    </div>
+    <div class="flow">
+      <span class="src">Facebook export</span>
+      <span class="chip">parse posts</span><span class="arrow">&rarr;</span>
+      <span class="chip">match to stops by date</span><span class="arrow">&rarr;</span>
+      <span class="chip">you review</span><span class="arrow">&rarr;</span>
+      <span class="chip end">Blog</span>
+    </div>
+    <div class="flow">
+      <span class="src">Both together</span>
+      <span class="chip">suggest photos per stop</span><span class="arrow">&rarr;</span>
+      <span class="chip">you curate</span><span class="arrow">&rarr;</span>
+      <span class="chip end">Galleries</span>
+    </div>
+  </div>
+
+  <div class="route-line">
+
+    <div class="phase">
+      <div class="marker">0</div>
+      <div class="phase-head"><h2>Foundation: a real data layer</h2><span class="phase-meta">~1 session</span></div>
+      <p class="summary">Everything downstream lands in a database, so this comes first. SQLite fits the home-server plan perfectly: one file, no service to run, trivial to back up.</p>
+      <ul>
+        <li>Replace <code>data/stops.json</code> with SQLite (Drizzle ORM + <code>better-sqlite3</code>). Migrate the 3 existing stops.</li>
+        <li>Extend the schema: <strong>stops</strong> gain <code>slug</code>, <code>description</code>, <code>coverPhotoId</code>; new <strong>posts</strong> table (text, timestamp, media, linked stop); new <strong>photos</strong> table (Dropbox path, taken-at, GPS, stop, curation status); <strong>import staging</strong> tables so nothing hits the live site without review.</li>
+        <li>Point the existing API routes and admin pages at the database &mdash; behavior unchanged, storage swapped.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="marker">1</div>
+      <div class="phase-head"><h2>Dropbox importer: rebuild the timeline</h2><span class="phase-meta">~2 sessions &middot; the automation centerpiece</span></div>
+      <p class="summary">The photo library becomes the source of truth for <em>where you were and when</em>. Dropbox's API returns photo capture time and GPS in file metadata (<code>include_media_info</code>), so most of the scan needs no downloads at all.</p>
+      <ul>
+        <li><strong>Scan</strong> the backup folder recursively via <code>files/list_folder</code>, collecting <code>time_taken</code> + GPS per photo. Where Dropbox lacks media info, download just the file header and parse EXIF locally (<code>exifr</code>). Results cached to disk so re-runs are incremental &mdash; important for a multi-year library.</li>
+        <li><strong>Cluster</strong> photos chronologically: consecutive days of photos within a ~10&nbsp;km radius become a <em>candidate stop</em> with arrival date, departure date, and centroid coordinates. Gaps and travel-day photos define the legs between stops.</li>
+        <li><strong>Name suggestions</strong> via reverse geocoding (Nominatim) &mdash; candidates arrive as &ldquo;Moab, UT &middot; Mar 14&ndash;29, 2022 &middot; 212 photos&rdquo; rather than raw coordinates.</li>
+        <li><strong>Review queue</strong> in the admin UI: approve, merge, rename, or reject candidates on a map. Approved candidates become real stops.</li>
+        <li><strong>Routes drawn for you:</strong> generate the journey polyline between consecutive stops with OSRM road routing, replacing hand-clicked waypoints (the editor stays for touch-ups).</li>
+      </ul>
+      <div class="you"><strong>You'll need to:</strong> create a Dropbox app (scoped access, <code>files.metadata.read</code> + <code>files.content.read</code>) and generate a refresh token &mdash; I'll walk you through it, ~10 minutes &mdash; and tell me the folder path of the photo backup.</div>
+    </div>
+
+    <div class="phase">
+      <div class="marker">2</div>
+      <div class="phase-head"><h2>Facebook importer: the blog arrives</h2><span class="phase-meta">~1&ndash;2 sessions</span></div>
+      <p class="summary">One bulk import turns years of &ldquo;Raffys on the Road&rdquo; posts into blog entries, each attached to the stop you were at when you posted it.</p>
+      <ul>
+        <li><strong>Parse</strong> the export's <code>your_posts_*.json</code>: text, timestamp, and attached photos/videos (copied out of the export archive). Includes the fix for Facebook's notorious broken UTF-8 encoding, so em&nbsp;dashes and emoji survive.</li>
+        <li><strong>Auto-link</strong> each post to a stop by comparing its timestamp against stop date ranges; a review screen catches the ambiguous ones (travel days, posts written after leaving).</li>
+        <li><strong>Photo upgrade</strong> (nice-to-have): Facebook export images are recompressed &mdash; where a post photo's timestamp matches a Dropbox original, swap in the full-quality version.</li>
+        <li><strong>Hand-written entries later:</strong> imported posts and future entries share one posts table and one editor, so adding new writing is already solved.</li>
+      </ul>
+      <div class="you"><strong>You'll need to:</strong> request the export at Facebook &rarr; Settings &rarr; <em>Download your information</em> &mdash; choose <strong>JSON</strong> format, <strong>all time</strong>, media quality <strong>high</strong>, and at least &ldquo;Posts&rdquo;. Facebook takes hours to a couple of days to prepare it, so kick this off early &mdash; it can run while we build Phases 0&ndash;1.</div>
+    </div>
+
+    <div class="phase">
+      <div class="marker">3</div>
+      <div class="phase-head"><h2>Photo curation</h2><span class="phase-meta">~1 session to build, then curation at your pace</span></div>
+      <p class="summary">The site shows the photos you pick, not the whole library. The importer does the sorting; you do the choosing.</p>
+      <ul>
+        <li>Every scanned photo is matched to a stop by date and location; a scoring pass suggests ~8 per stop (GPS-tagged, spread across the stay, deduplicated bursts).</li>
+        <li>Admin curation grid per stop: thumbnails stream straight from Dropbox, one click to keep or skip, drag to reorder, star one as the stop's cover photo.</li>
+        <li>Only kept photos are downloaded &mdash; resized into web variants (<code>sharp</code> &rarr; WebP) and stored on the server's disk. The full-resolution originals stay in Dropbox.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="marker">4</div>
+      <div class="phase-head"><h2>The public site</h2><span class="phase-meta">~2 sessions</span></div>
+      <p class="summary">With real content in place, the map becomes the front door to the story instead of the whole story.</p>
+      <ul>
+        <li><strong>Stop pages</strong> (<code>/stops/moab-ut</code>): dates, description, photo gallery, and the posts written there.</li>
+        <li><strong>Map upgrades:</strong> pin popups with cover photo + dates + link; journey lines colored by trip year instead of alternating red/blue; the placeholder popup and hardcoded &ldquo;current location&rdquo; replaced with a proper trip start/end treatment.</li>
+        <li><strong>Blog &amp; timeline:</strong> a chronological post index and a scrollable trip timeline as alternate ways in, for family who'd rather read than pan a map.</li>
+        <li><strong>Design pass:</strong> typography, mobile layout, and a visual identity worthy of the trip.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="marker">5</div>
+      <div class="phase-head"><h2>Ship it: home server + Cloudflare Tunnel</h2><span class="phase-meta">~1 session</span></div>
+      <p class="summary">Two containers and a tunnel &mdash; then it's live for family and friends.</p>
+      <ul>
+        <li><strong>Docker Compose:</strong> the Next.js app (standalone build) with volumes for the SQLite file and photo directory, plus a <code>cloudflared</code> container running the tunnel. One <code>docker compose up -d</code> on the server.</li>
+        <li><strong>Lock the admin:</strong> a Cloudflare Access policy on <code>/admin</code> and write API routes &mdash; email one-time-code login for just your addresses. The public map stays open.</li>
+        <li><strong>Backups:</strong> nightly job copies the SQLite database and curated photos&hellip; back to Dropbox. The trip archive protects the trip site.</li>
+        <li>Update <code>README.md</code> and <code>CLAUDE.md</code> for the new architecture.</li>
+      </ul>
+      <div class="you"><strong>You'll need:</strong> Docker on the home server, and a domain (or subdomain) on Cloudflare for the tunnel.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Sequencing &amp; what to kick off now</h2>
+    <p>Phases run 0 &rarr; 5, but the two imports are independent &mdash; the Facebook importer can be built while you're still reviewing Dropbox stop candidates. The only long pole outside our control is Facebook preparing the export, so <strong>request it today</strong>; the Dropbox app creation is the other 10-minute human task, needed before Phase&nbsp;1 can run.</p>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Risk</th><th>Reality check &amp; fallback</th></tr>
+        <tr><td>Photos missing GPS</td><td>Phone photos are almost always tagged; dedicated-camera photos often aren't. Untagged photos still carry timestamps, so they inherit the stop whose date range contains them &mdash; only the stop <em>discovery</em> leans on GPS, and phone photos alone are plenty for that.</td></tr>
+        <tr><td>Export format quirks</td><td>Facebook's JSON layout shifts between export versions. The parser is built against <em>your actual export</em>, not documentation, so this is absorbed in Phase 2 rather than discovered late.</td></tr>
+        <tr><td>Library size</td><td>Tens of thousands of photos are fine: the scan is metadata-only, cached, and resumable. Full downloads happen only for the few hundred curated photos.</td></tr>
+        <tr><td>Clustering judgment calls</td><td>Overnight stops vs. lunch breaks is a threshold decision. Everything lands in a review queue first &mdash; the automation proposes, you approve. Nothing publishes itself.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <footer>Raffy's on the Road &mdash; Next.js 16 &middot; React 19 &middot; Leaflet &middot; SQLite &middot; Docker &middot; Cloudflare Tunnel</footer>
+</div>

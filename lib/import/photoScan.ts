@@ -43,7 +43,14 @@ export function absolutePhotoPath(rel: string): string {
   return path.join(PHOTO_LIBRARY_DIR, rel.replace(/^\/+/, ""));
 }
 
-function walk(root: string, out: FileStat[]) {
+/** Dropbox online-only placeholders seen by the last walk (no local bytes to read). */
+export interface WalkStats {
+  onlineOnly: number;
+  /** Library-relative paths of the placeholders: present in Dropbox, just not downloaded. */
+  onlinePaths: string[];
+}
+
+function walk(root: string, out: FileStat[], stats: WalkStats) {
   const stack = [root];
   while (stack.length) {
     const dir = stack.pop()!;
@@ -57,9 +64,23 @@ function walk(root: string, out: FileStat[]) {
       const abs = path.join(dir, e.name);
       if (e.isDirectory()) {
         stack.push(abs);
-      } else if (e.isFile() && MEDIA_EXT.has(path.extname(e.name).toLowerCase())) {
+      } else if (MEDIA_EXT.has(path.extname(e.name).toLowerCase())) {
+        // Dropbox online-only files are reparse points: readdir reports them as symlinks
+        // with no local data. They can't be read until Dropbox downloads them.
+        if (e.isSymbolicLink()) {
+          const st = fs.statSync(abs);
+          if (st.blocks === 0) {
+            stats.onlineOnly++;
+            stats.onlinePaths.push("/" + path.relative(PHOTO_LIBRARY_DIR, abs).split(path.sep).join("/"));
+            continue;
+          }
+          const rel = "/" + path.relative(PHOTO_LIBRARY_DIR, abs).split(path.sep).join("/");
+          out.push({ rel, abs, size: st.size, mtimeMs: Math.round(st.mtimeMs) });
+          continue;
+        }
+        if (!e.isFile()) continue;
         const st = fs.statSync(abs);
-        if (st.size === 0) continue; // online-only placeholder
+        if (st.size === 0) continue;
         const rel = "/" + path.relative(PHOTO_LIBRARY_DIR, abs).split(path.sep).join("/");
         out.push({ rel, abs, size: st.size, mtimeMs: Math.round(st.mtimeMs) });
       }
@@ -197,6 +218,7 @@ export async function scanPhotoLibrary(opts: ScanOptions = {}): Promise<ScanResu
   const batchSize = opts.batchSize ?? 2000;
 
   const files: FileStat[] = [];
+  const walkStats: WalkStats = { onlineOnly: 0, onlinePaths: [] };
   for (const root of PHOTO_ROOTS) {
     const abs = path.join(PHOTO_LIBRARY_DIR, root);
     if (!fs.existsSync(abs)) {
@@ -204,8 +226,12 @@ export async function scanPhotoLibrary(opts: ScanOptions = {}): Promise<ScanResu
       continue;
     }
     const before = files.length;
-    walk(abs, files);
-    log(`${root}: ${files.length - before} media files`);
+    const beforeOnline = walkStats.onlineOnly;
+    walk(abs, files, walkStats);
+    log(`${root}: ${files.length - before} media files${walkStats.onlineOnly - beforeOnline ? ` (${walkStats.onlineOnly - beforeOnline} online-only in Dropbox, not scannable until downloaded)` : ""}`);
+  }
+  if (walkStats.onlineOnly > 0) {
+    log(`NOTE: ${walkStats.onlineOnly} photos are online-only in Dropbox. Right-click them in Explorer -> "Make available offline", then rescan.`);
   }
 
   // Decide what needs exiftool.
@@ -224,8 +250,11 @@ export async function scanPhotoLibrary(opts: ScanOptions = {}): Promise<ScanResu
       });
   log(`${todo.length} of ${files.length} files need scanning`);
 
-  // Drop ledger/photo rows for files that no longer exist.
+  // Drop ledger/photo rows for files that no longer exist. Online-only placeholders
+  // still exist in Dropbox (just not on disk), so they are NOT treated as gone —
+  // their previously scanned metadata stays in the index.
   const present = new Set(files.map((f) => f.rel));
+  for (const p of walkStats.onlinePaths) present.add(p);
   const gone = [...ledger.keys()].filter((p) => !present.has(p));
   if (gone.length) {
     db.transaction((tx) => {

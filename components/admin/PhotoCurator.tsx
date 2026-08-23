@@ -156,6 +156,17 @@ export default function PhotoCurator({ stop, onStopChange }: Props) {
     });
   }
 
+  /** Keep/skip the photo in the viewer, then move on to the next one (or close if it was the last). */
+  function decideInLightbox(status: CurationStatus) {
+    if (!lightbox) return;
+    const i = photos.findIndex((p) => p.id === lightbox.id);
+    const staysInTab = status === tab;
+    const remaining = staysInTab ? photos : photos.filter((p) => p.id !== lightbox.id);
+    const next = remaining.length === 0 ? null : staysInTab ? remaining[(i + 1) % remaining.length] : remaining[Math.min(i, remaining.length - 1)];
+    setStatus(lightbox, status);
+    setLightbox(next);
+  }
+
   const total = counts.unreviewed + counts.suggested + counts.kept + counts.skipped;
   const thumb = (p: PhotoResponse, size = 320) =>
     p.variants ? `/api/media/${p.variants.thumb}` : `/api/photos/${p.id}/thumb?size=${size}`;
@@ -290,12 +301,12 @@ export default function PhotoCurator({ stop, onStopChange }: Props) {
               {lightbox.takenAt ? new Date(lightbox.takenAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : ""} · {lightboxIndex + 1} / {photos.length}
             </span>
             {lightbox.curationStatus !== "kept" ? (
-              <button onClick={() => setStatus(lightbox, "kept")} style={{ ...btn, background: "#28a745", padding: "4px 10px" }}>Keep</button>
+              <button onClick={() => decideInLightbox("kept")} style={{ ...btn, background: "#28a745", padding: "4px 10px" }}>Keep</button>
             ) : (
               <span style={{ color: "#9be29b" }}>kept</span>
             )}
             {lightbox.curationStatus !== "skipped" && (
-              <button onClick={() => setStatus(lightbox, "skipped")} style={{ ...btn, background: "#dc3545", padding: "4px 10px" }}>Skip</button>
+              <button onClick={() => decideInLightbox("skipped")} style={{ ...btn, background: "#dc3545", padding: "4px 10px" }}>Skip</button>
             )}
             <span style={{ opacity: 0.6 }}>← → browse · Esc close</span>
           </div>

@@ -1,6 +1,6 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import type { PostRow, PostCandidateRow, PostMedia, StopRow } from "@/lib/db/schema";
+import type { PostRow, PostCandidateRow, PostMedia, PostPlace, StopRow } from "@/lib/db/schema";
 import type {
   PostResponse,
   PostCandidateResponse,
@@ -33,6 +33,7 @@ function toCandidate(row: PostCandidateRow): PostCandidateResponse {
     body: row.body,
     postedAt: row.postedAt,
     media: row.media,
+    place: row.place ?? null,
     suggestedStopId: row.suggestedStopId,
     status: row.status as PostCandidateResponse["status"],
     postId: row.postId,
@@ -43,15 +44,26 @@ function toCandidate(row: PostCandidateRow): PostCandidateResponse {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+type StopForLinking = Pick<StopRow, "id" | "arrivalDate" | "departureDate" | "latitude" | "longitude">;
+
+const haversineKm = (aLat: number, aLon: number, bLat: number, bLon: number) => {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const x = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLon - aLon) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(x));
+};
+
+/** Days a post may trail the stay it's about (people write up a place after leaving). */
+const LATE_POST_DAYS = 14;
+
 /**
- * Pick the stop whose stay contains `date`. The departure day counts in full
- * (people post about a place the day they leave it). Returns null when no stop
- * contains the date — those land in the review queue as ambiguous.
+ * Pick the stop a post is about.
+ *  1. The stop whose stay contains the post date (departure day inclusive; tightest wins).
+ *  2. Else, if the post has a check-in location: the nearest stop within 30 km whose
+ *     stay is within 30 days of the post.
+ *  3. Else the most recent stop that ended within LATE_POST_DAYS before the post.
+ * Null means ambiguous: it lands in the review queue unassigned.
  */
-export function suggestStopForDate(
-  date: string,
-  stopList: Pick<StopRow, "id" | "arrivalDate" | "departureDate">[]
-): string | null {
+export function suggestStopForDate(date: string, stopList: StopForLinking[], place?: PostPlace | null): string | null {
   const t = new Date(date).getTime();
   let best: { id: string; span: number } | null = null;
   for (const s of stopList) {
@@ -59,15 +71,34 @@ export function suggestStopForDate(
     const end = new Date(s.departureDate).getTime() + DAY_MS;
     if (t >= start && t < end) {
       const span = end - start;
-      if (!best || span < best.span) best = { id: s.id, span }; // prefer the tighter range
+      if (!best || span < best.span) best = { id: s.id, span };
     }
   }
-  return best?.id ?? null;
+  if (best) return best.id;
+
+  if (place?.latitude != null && place.longitude != null) {
+    let near: { id: string; d: number } | null = null;
+    for (const s of stopList) {
+      const start = new Date(s.arrivalDate).getTime();
+      const end = new Date(s.departureDate).getTime() + DAY_MS;
+      if (t < start - 30 * DAY_MS || t > end + 30 * DAY_MS) continue;
+      const d = haversineKm(place.latitude, place.longitude, s.latitude, s.longitude);
+      if (d <= 30 && (!near || d < near.d)) near = { id: s.id, d };
+    }
+    if (near) return near.id;
+  }
+
+  let recent: { id: string; end: number } | null = null;
+  for (const s of stopList) {
+    const end = new Date(s.departureDate).getTime() + DAY_MS;
+    if (end <= t && t - end <= LATE_POST_DAYS * DAY_MS && (!recent || end > recent.end)) recent = { id: s.id, end };
+  }
+  return recent?.id ?? null;
 }
 
-function allStopsForLinking() {
+function allStopsForLinking(): StopForLinking[] {
   return db
-    .select({ id: stops.id, arrivalDate: stops.arrivalDate, departureDate: stops.departureDate })
+    .select({ id: stops.id, arrivalDate: stops.arrivalDate, departureDate: stops.departureDate, latitude: stops.latitude, longitude: stops.longitude })
     .from(stops)
     .all();
 }
@@ -130,6 +161,7 @@ export interface StageCandidateInput {
   body: string;
   postedAt: string;
   media: PostMedia[];
+  place?: PostPlace | null;
 }
 
 /** Insert new candidates; existing sourceIds are left untouched. Returns count inserted. */
@@ -146,7 +178,8 @@ export async function stagePostCandidates(inputs: StageCandidateInput[]): Promis
           body: c.body,
           postedAt: c.postedAt,
           media: c.media,
-          suggestedStopId: suggestStopForDate(c.postedAt, stopList),
+          place: c.place ?? null,
+          suggestedStopId: suggestStopForDate(c.postedAt, stopList, c.place),
           status: "pending",
         })
         .onConflictDoNothing({ target: postCandidates.sourceId })
@@ -164,7 +197,7 @@ export async function relinkPendingCandidates(): Promise<number> {
   let changed = 0;
   db.transaction((tx) => {
     for (const c of pending) {
-      const suggestion = suggestStopForDate(c.postedAt, stopList);
+      const suggestion = suggestStopForDate(c.postedAt, stopList, c.place);
       if (suggestion !== c.suggestedStopId) {
         tx.update(postCandidates)
           .set({ suggestedStopId: suggestion, updatedAt: new Date().toISOString() })

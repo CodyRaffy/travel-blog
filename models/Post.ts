@@ -1,6 +1,6 @@
-import type { PostMedia } from "@/lib/db/schema";
+import type { PostMedia, PostPlace } from "@/lib/db/schema";
 
-export type { PostMedia };
+export type { PostMedia, PostPlace };
 
 export type PostSource = "facebook" | "manual";
 export type PostCandidateStatus = "pending" | "approved" | "rejected";
@@ -43,6 +43,7 @@ export interface PostCandidateResponse {
   body: string;
   postedAt: string;
   media: PostMedia[];
+  place: PostPlace | null;
   suggestedStopId: string | null;
   status: PostCandidateStatus;
   postId: string | null;

@@ -67,7 +67,7 @@ async function main() {
       }
       media.push({ kind: m.kind, path: rel, description: m.description });
     }
-    return { sourceId: p.sourceId, body: p.text, postedAt: p.postedAt, media };
+    return { sourceId: p.sourceId, body: p.text, postedAt: p.postedAt, media, place: p.place ?? null };
   });
 
   const inserted = await stagePostCandidates(staged);

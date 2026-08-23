@@ -135,7 +135,8 @@ export default function PostCandidateReview() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
                 <strong>{formatDate(c.postedAt)}</strong>
-                {ambiguous && <span style={{ color: "#b8860b" }}>No stop covers this date — pick one or skip</span>}
+                {c.place && <span style={{ color: "#555" }}>📍 {c.place.name}</span>}
+                {ambiguous && <span style={{ color: "#b8860b" }}>No stop matched — pick one or skip</span>}
               </div>
 
               <p style={{ whiteSpace: "pre-wrap", margin: "8px 0" }}>{c.body || <em>(no text)</em>}</p>

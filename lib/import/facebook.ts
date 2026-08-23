@@ -4,6 +4,7 @@
  * Handles both export layouts seen in the wild:
  *   - posts/your_posts_1.json                                   (older)
  *   - your_facebook_activity/posts/your_posts__check_ins__photos_and_videos_1.json (newer)
+ *   - this_profile's_activity_across_facebook/posts/profile_posts_1.json            (2025+, Pages)
  *
  * Facebook writes non-ASCII text as UTF-8 bytes re-encoded as Latin-1 escapes
  * ("â" for a right single quote). `fixMojibake` undoes that.
@@ -177,7 +178,7 @@ export function findPostsFiles(exportDir: string): string[] {
       if (entry.isDirectory()) {
         if (entry.name === "media" || entry.name === "messages") continue; // big and irrelevant
         walk(full);
-      } else if (/^your_posts.*\.json$/i.test(entry.name)) {
+      } else if (/^(your_posts|profile_posts).*\.json$/i.test(entry.name)) {
         found.push(full);
       }
     }
@@ -191,7 +192,7 @@ export function parseFacebookExport(exportDir: string): ParsedPost[] {
   const files = findPostsFiles(exportDir);
   if (files.length === 0) {
     throw new Error(
-      `No your_posts*.json files found under ${exportDir}. Is this the extracted Facebook export folder?`
+      `No your_posts*.json / profile_posts*.json files found under ${exportDir}. Is this the extracted Facebook export folder?`
     );
   }
   const seen = new Set<string>();

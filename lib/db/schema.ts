@@ -149,6 +149,8 @@ export const postCandidates = sqliteTable(
     body: text("body").notNull(),
     postedAt: text("posted_at").notNull(),
     media: text("media", { mode: "json" }).$type<PostMedia[]>().notNull().default(sql`'[]'`),
+    // Facebook check-in attached to the post, if any: { name, latitude?, longitude? }
+    place: text("place", { mode: "json" }).$type<PostPlace | null>(),
     // Importer's best guess for the stop; null when ambiguous.
     suggestedStopId: text("suggested_stop_id").references(() => stops.id, { onDelete: "set null" }),
     // "pending" | "approved" | "rejected"
@@ -192,6 +194,12 @@ export interface PostMedia {
   /** Linked photos row when a Dropbox original was matched. */
   photoId?: string;
   description?: string;
+}
+
+export interface PostPlace {
+  name: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface PhotoVariants {

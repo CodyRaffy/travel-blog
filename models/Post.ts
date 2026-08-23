@@ -5,6 +5,12 @@ export type { PostMedia, PostPlace };
 export type PostSource = "facebook" | "manual";
 export type PostCandidateStatus = "pending" | "approved" | "rejected";
 
+/** Post media with resolved public URLs. `upgraded` = showing the Dropbox original. */
+export interface PostMediaView extends PostMedia {
+  urls: { thumb: string; medium: string; large: string };
+  upgraded: boolean;
+}
+
 export interface PostResponse {
   id: string;
   stopId: string | null;
@@ -13,7 +19,7 @@ export interface PostResponse {
   postedAt: string;
   source: PostSource;
   sourceId: string | null;
-  media: PostMedia[];
+  media: PostMediaView[];
   published: boolean;
 }
 

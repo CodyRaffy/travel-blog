@@ -15,7 +15,9 @@
     "photos:scan": "tsx scripts/scan-photos.ts",
     "photos:cluster": "tsx scripts/cluster-photos.ts",
     "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
-    "prod": "node scripts/prod.mjs"
+    "prod": "node scripts/prod.mjs",
+    "photos:hash": "tsx scripts/hash-photos.ts",
+    "posts:match-media": "tsx scripts/match-facebook-media.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

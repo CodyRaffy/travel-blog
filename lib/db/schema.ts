@@ -97,6 +97,8 @@ export const photos = sqliteTable(
     score: real("score"),
     sortOrder: integer("sort_order"),
     caption: text("caption"),
+    // 64-bit perceptual hash (dHash) as 16 hex chars, for matching Facebook copies to originals.
+    phash: text("phash"),
     // Paths (relative to the photo storage dir) of generated web variants, once downloaded.
     variants: text("variants", { mode: "json" }).$type<PhotoVariants | null>(),
     createdAt: text("created_at").notNull().default(now),
@@ -107,6 +109,7 @@ export const photos = sqliteTable(
     index("photos_stop_idx").on(t.stopId),
     index("photos_taken_at_idx").on(t.takenAt),
     index("photos_status_idx").on(t.curationStatus),
+    index("photos_phash_idx").on(t.phash),
   ]
 );
 
@@ -191,8 +194,10 @@ export interface PostMedia {
   kind: "photo" | "video";
   /** Path relative to the media storage directory. */
   path: string;
-  /** Linked photos row when a Dropbox original was matched. */
+  /** Linked photos row when a Dropbox original was matched (see scripts/match-facebook-media.ts). */
   photoId?: string;
+  /** Perceptual hash of this media file, cached so matching is cheap to re-run. */
+  phash?: string;
   description?: string;
 }
 

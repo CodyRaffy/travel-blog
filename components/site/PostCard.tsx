@@ -29,17 +29,16 @@ export default function PostCard({ post, stop, linkToPost = true }: PostCardProp
       <div className="body">{post.body}</div>
       {post.media.length > 0 && (
         <div className="media">
-          {post.media.map((m) => {
-            const url = mediaUrl(m.path);
-            return m.kind === "video" ? (
-              <video key={m.path} src={url} controls preload="metadata" />
+          {post.media.map((m) =>
+            m.kind === "video" ? (
+              <video key={m.path} src={mediaUrl(m.path)} controls preload="metadata" />
             ) : (
-              <a key={m.path} href={url} target="_blank" rel="noopener noreferrer">
+              <a key={m.path} href={m.urls.large} target="_blank" rel="noopener noreferrer">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={m.description ?? ""} loading="lazy" />
+                <img src={m.urls.medium} alt={m.description ?? ""} loading="lazy" />
               </a>
-            );
-          })}
+            )
+          )}
         </div>
       )}
     </article>

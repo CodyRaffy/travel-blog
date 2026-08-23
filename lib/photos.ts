@@ -12,7 +12,12 @@ import { promisify } from "util";
 import type { PhotoResponse, CurationStatus } from "@/models/Photo";
 
 const execFileP = promisify(execFile);
-const { photos, stops } = schema;
+const { photos, stops, posts } = schema;
+
+/** True if an imported post shows this photo as the upgraded original. */
+function referencedByPost(photoId: string): boolean {
+  return !!db.select({ id: posts.id }).from(posts).where(sql`${posts.media} like ${"%" + photoId + "%"}`).get();
+}
 
 export function toPhotoResponse(row: PhotoRow): PhotoResponse {
   return {
@@ -155,7 +160,7 @@ export async function setCuration(
           .get()?.m ?? -1;
         set.sortOrder = max + 1;
       }
-    } else if (existing.variants) {
+    } else if (existing.variants && !referencedByPost(existing.id)) {
       removeVariants(existing.id);
       set.variants = null;
       // If this was the stop's cover, clear it.

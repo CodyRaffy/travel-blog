@@ -1,6 +1,8 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { PostRow, PostCandidateRow, PostMedia, PostPlace, StopRow } from "@/lib/db/schema";
+import { mediaUrl } from "@/lib/media";
+import { ensureVariantsForMedia } from "@/lib/import/matchMedia";
 import type {
   PostResponse,
   PostCandidateResponse,
@@ -8,9 +10,21 @@ import type {
   UpdatePostInput,
 } from "@/models/Post";
 
-const { posts, postCandidates, stops } = schema;
+const { posts, postCandidates, stops, photos } = schema;
 
 // ---- mapping ---------------------------------------------------------------
+
+/** Attach public URLs: the matched Dropbox original's web variants when rendered, else the Facebook copy. */
+function resolveMedia(media: PostMedia[]): PostResponse["media"] {
+  return media.map((m) => {
+    const fb = mediaUrl(m.path);
+    if (m.kind === "photo" && m.photoId) {
+      const p = db.select({ v: photos.variants }).from(photos).where(eq(photos.id, m.photoId)).get();
+      if (p?.v) return { ...m, urls: { thumb: mediaUrl(p.v.thumb), medium: mediaUrl(p.v.medium), large: mediaUrl(p.v.large) }, upgraded: true };
+    }
+    return { ...m, urls: { thumb: fb, medium: fb, large: fb }, upgraded: false };
+  });
+}
 
 function toPost(row: PostRow): PostResponse {
   return {
@@ -21,7 +35,7 @@ function toPost(row: PostRow): PostResponse {
     postedAt: row.postedAt,
     source: row.source as PostResponse["source"],
     sourceId: row.sourceId,
-    media: row.media,
+    media: resolveMedia(row.media),
     published: row.published,
   };
 }
@@ -249,6 +263,8 @@ export async function approvePostCandidate(
   }
 
   const finalStopId = stopId === undefined ? cand.suggestedStopId : stopId;
+  // Show the full-quality originals for any media matched to the Dropbox library.
+  await ensureVariantsForMedia(cand.media);
   const result = db.transaction((tx) => {
     const post = tx
       .insert(posts)

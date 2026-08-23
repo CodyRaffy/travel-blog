@@ -90,7 +90,62 @@ interface OverpassElement {
   tags?: Record<string, string>;
 }
 
-const OVERPASS_URL = process.env.OVERPASS_URL ?? "https://overpass-api.de/api/interpreter";
+const OVERPASS_URLS = (process.env.OVERPASS_URL ?? "https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://overpass.private.coffee/api/interpreter")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
+
+/** POST an Overpass query, trying each mirror once with a short timeout. Null if all fail. */
+async function overpass(query: string): Promise<OverpassElement[] | null> {
+  for (const url of OVERPASS_URLS) {
+    try {
+      await politeDelay();
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "User-Agent": NOMINATIM_USER_AGENT, "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(25_000),
+      });
+      if (res.status === 429 || res.status === 504) continue; // busy: try the next mirror
+      if (!res.ok) continue;
+      return ((await res.json()) as { elements: OverpassElement[] }).elements;
+    } catch {
+      continue; // timeout / network: next mirror
+    }
+  }
+  return null;
+}
+
+/** Fallback when Overpass is down: Nominatim tag search inside a small box around the point. */
+async function nominatimNearby(lat: number, lng: number, radiusM: number): Promise<OverpassElement[] | null> {
+  const dLat = radiusM / 111_000;
+  const dLon = radiusM / (111_000 * Math.cos((lat * Math.PI) / 180));
+  const viewbox = `${lng - dLon},${lat + dLat},${lng + dLon},${lat - dLat}`;
+  const out: OverpassElement[] = [];
+  for (const tag of ["tourism=caravan_site", "tourism=camp_site", "leisure=nature_reserve", "boundary=national_park"]) {
+    try {
+      await politeDelay();
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      url.search = new URLSearchParams({ q: `[${tag}]`, format: "jsonv2", bounded: "1", viewbox, extratags: "1", limit: "5" }).toString();
+      const res = await fetch(url, { headers: { "User-Agent": NOMINATIM_USER_AGENT }, signal: AbortSignal.timeout(20_000) });
+      if (!res.ok) continue;
+      const rows = (await res.json()) as { lat: string; lon: string; name?: string; category: string; type: string; osm_type: string; extratags?: Record<string, string> }[];
+      const [k, v] = tag.split("=");
+      for (const r of rows) {
+        if (!r.name) continue;
+        out.push({
+          type: r.osm_type === "node" ? "node" : "way",
+          lat: Number(r.lat),
+          lon: Number(r.lon),
+          tags: { name: r.name, [k]: v, ...(r.extratags ?? {}) },
+        });
+      }
+    } catch {
+      continue;
+    }
+  }
+  return out.length ? out : null;
+}
 
 function distKm(aLat: number, aLon: number, bLat: number, bLon: number) {
   const R = 6371;
@@ -131,14 +186,9 @@ export async function findNearbyPlace(lat: number, lng: number, radiusM = 2000):
 
   let place: NearbyPlace | null = null;
   try {
-    await politeDelay();
-    const res = await fetch(OVERPASS_URL, {
-      method: "POST",
-      headers: { "User-Agent": NOMINATIM_USER_AGENT, "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(q),
-    });
-    if (!res.ok) return null; // don't cache failures
-    const { elements } = (await res.json()) as { elements: OverpassElement[] };
+    let elements = await overpass(q);
+    if (elements === null) elements = await nominatimNearby(lat, lng, radiusM);
+    if (elements === null) return null; // every service failed: don't cache, try again later
 
     let best: { el: OverpassElement; score: number; d: number } | null = null;
     for (const el of elements) {

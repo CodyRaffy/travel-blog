@@ -29,9 +29,13 @@ export default function StopList({ stops, onDelete }: StopListProps) {
         {stops.map((stop) => (
           <tr key={stop.id} style={{ borderBottom: "1px solid #ddd" }}>
             <td style={{ padding: "8px" }}>
-              <a href={stop.link} target="_blank" rel="noopener noreferrer">
-                {stop.name}
-              </a>
+              {stop.link ? (
+                <a href={stop.link} target="_blank" rel="noopener noreferrer">
+                  {stop.name}
+                </a>
+              ) : (
+                stop.name
+              )}
             </td>
             <td style={{ padding: "8px" }}>
               {stop.statePark && "State Park"}

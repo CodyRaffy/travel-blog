@@ -25,6 +25,7 @@ export interface ApproveData {
   name: string;
   arrivalDate: string;
   departureDate: string;
+  link: string;
   statePark: boolean;
   nationalPark: boolean;
   overnightStop: boolean;
@@ -62,6 +63,7 @@ export default function StopCandidateCard({
   const [name, setName] = useState(c.suggestedName ?? "");
   const [arrival, setArrival] = useState(fmt(c.arrivalDate));
   const [departure, setDeparture] = useState(fmt(c.departureDate));
+  const [link, setLink] = useState("");
   const [statePark, setStatePark] = useState(false);
   const [nationalPark, setNationalPark] = useState(false);
   const [overnightStop, setOvernightStop] = useState(false);
@@ -224,6 +226,13 @@ export default function StopCandidateCard({
                 <label>
                   Left <input type="date" value={departure} onChange={(e) => setDeparture(e.target.value)} style={input} />
                 </label>
+                <input
+                  type="url"
+                  value={link}
+                  placeholder="Website (optional), e.g. https://www.floridastateparks.org/..."
+                  onChange={(e) => setLink(e.target.value)}
+                  style={{ ...input, flex: "1 1 320px" }}
+                />
                 <label><input type="checkbox" checked={statePark} onChange={(e) => setStatePark(e.target.checked)} /> State Park</label>
                 <label><input type="checkbox" checked={nationalPark} onChange={(e) => setNationalPark(e.target.checked)} /> National Park</label>
                 <label><input type="checkbox" checked={nationalMonument} onChange={(e) => setNationalMonument(e.target.checked)} /> Nat&apos;l Monument</label>
@@ -237,6 +246,7 @@ export default function StopCandidateCard({
                       name: name.trim(),
                       arrivalDate: `${arrival}T00:00:00.000Z`,
                       departureDate: `${departure}T00:00:00.000Z`,
+                      link: link.trim(),
                       statePark,
                       nationalPark,
                       overnightStop,

@@ -14,7 +14,8 @@
     "import:facebook": "tsx scripts/import-facebook.ts",
     "photos:scan": "tsx scripts/scan-photos.ts",
     "photos:cluster": "tsx scripts/cluster-photos.ts",
-    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1"
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
+    "prod": "node scripts/prod.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

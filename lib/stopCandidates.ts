@@ -5,6 +5,7 @@ import { clusterPhotos, type ClusterOptions } from "@/lib/import/cluster";
 import { reverseGeocode } from "@/lib/geocode";
 import { roadRoute } from "@/lib/routing";
 import { createStop, getStops, updateStop } from "@/lib/stops";
+import { suggestStopPhotos } from "@/lib/photos";
 import type { StopInfoResponse } from "@/models/StopInfo";
 import type { StopCandidateResponse, StopCandidateStatus } from "@/models/StopCandidate";
 
@@ -260,6 +261,8 @@ export async function approveStopCandidate(
 
   let routed = false;
   if (input.route !== false) routed = await routeStopFromPrevious(stop.id);
+  // Pre-pick a gallery so curation starts from a suggestion instead of a blank grid.
+  await suggestStopPhotos(stop.id).catch(() => 0);
 
   const updated = db.select().from(stopCandidates).where(eq(stopCandidates.id, id)).get()!;
   const finalStop = (await getStops()).find((s) => s.id === stop.id)!;

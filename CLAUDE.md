@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run db:import-json` - One-time import of legacy `data/stops.json`
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Parse a Facebook export and stage posts into `post_candidates`
 - `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites\travel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
+- `npm run prod -- <script> [args]` - Run any script above against the production data dir (`C:\websites\_data	ravel-blog`)
 - `npm run photos:scan [-- --force]` - exiftool scan of the local photo library into `photos` (incremental via `scanned_files`)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Cluster into `stop_candidates`
 
@@ -52,6 +53,7 @@ public/           - Static assets (images, leaflet icons)
 - **app/admin/add/page.tsx** - Form to create new stop with map location picker
 - **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
 - **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
+- **app/admin/stops/[id]/photos/page.tsx** - Photo curation for a stop (Suggested / All / Kept / Skipped; keep, skip, drag-reorder, cover, caption)
 - **app/admin/posts/page.tsx** - List all blog posts
 - **app/admin/posts/review/page.tsx** - Review queue for imported post candidates (approve / re-assign stop / skip)
 - **app/admin/posts/new/page.tsx**, **app/admin/posts/[id]/page.tsx** - Create / edit a post
@@ -63,6 +65,7 @@ public/           - Static assets (images, leaflet icons)
 - **components/admin/LocationPicker.tsx** - Map for selecting stop location
 - **components/admin/WaypointEditor.tsx** - Interactive map for adding/removing journey waypoints
 - **components/admin/StopCandidateReview.tsx**, **StopCandidateCard.tsx**, **CandidateMap.tsx** - Stop candidate review UI
+- **components/admin/PhotoCurator.tsx** - Curation grid
 - **components/admin/PostForm.tsx** - Shared form for creating/editing posts
 - **components/admin/PostCandidateReview.tsx** - Import review queue UI
 - **components/admin/MediaStrip.tsx** - Thumbnail row for a post's media
@@ -76,6 +79,9 @@ public/           - Static assets (images, leaflet icons)
 - **app/api/post-candidates/[id]/route.ts** - PATCH `{ action: approve|reject|reset|suggest, stopId? }`
 - **app/api/media/[...path]/route.ts** - Serves files from `MEDIA_DIR` (path-traversal safe)
 - **app/api/stop-candidates/route.ts**, **[id]/route.ts**, **[id]/photos/route.ts** - Candidate queue; POST re-clusters; PATCH actions approve/reject/reset/merge/update
+- **app/api/photos/route.ts** (GET `?stopId=&status=`), **[id]/route.ts** (PATCH curationStatus/caption/sortOrder), **reorder/route.ts** - admin curation (all gated by the `/api/photos/` prefix)
+- **app/api/stops/[id]/photos/suggest/route.ts** - POST: score + pick ~8 photos (`?target=`)
+- **app/api/stops/[id]/gallery/route.ts** - Public: kept photos with web-variant URLs
 - **app/api/photos/[id]/thumb/route.ts** - Cached JPEG thumbnails (sharp; exiftool embedded preview for HEIC/video)
 - **app/api/stops/[id]/route-from-previous/route.ts** - OSRM road route from the chronologically previous stop
 
@@ -92,12 +98,15 @@ public/           - Static assets (images, leaflet icons)
 - **lib/stopCandidates.ts** - Generate (replaces pending; skips clusters overlapping existing stops or decided candidates), approve (creates stop, attaches cluster photos + unlocated photos in the date range, draws OSRM route), merge, reject, reset
 - **lib/geocode.ts** - Nominatim reverse geocoding, 1 req/s, cached in `geocode_cache` keyed by ~1 km rounded coords
 - **lib/routing.ts** - OSRM `roadRoute()`, thinned to ≤400 points
+- **lib/photos.ts** - Curation: `suggestStopPhotos()` (GPS +, big +, PNG/video -, burst -, spread over time buckets), `setCuration()` (keeping renders WebP `thumb`/`medium`/`large` into `MEDIA_DIR/photos/<id>/`; un-keeping deletes them and clears the stop cover), reorder, public gallery
 - **lib/thumbs.ts** - Thumbnail generation into `CACHE_DIR` (`data/cache`)
 - **lib/media.ts** - `MEDIA_DIR` (default `data/media`), `resolveMediaPath()`, `mediaUrl()`
 - **lib/slug.ts** - `slugify()` helper
 - **data/stops.json** - Legacy JSON data, kept only as the source for `npm run db:import-json`
 - **models/StopInfo.ts** - TypeScript interfaces: `StopInfo`, `StopInfoResponse`, `CreateStopInput`, `UpdateStopInput`
 - **data/ImportantMarkers.ts** - Fixed locations (current location, home, center of USA)
+
+Curation: only `kept` photos with `variants` are public (`/api/stops/[id]/gallery`, `/api/media/photos/...`). Originals never leave `PHOTO_LIBRARY_DIR`.
 
 Import flows: `photos:scan` → `photos` → `photos:cluster` → `stop_candidates` → admin review → `stops` (photos get `stopId`); Facebook importer → `post_candidates` → admin review → `posts`. Nothing reaches `posts` without approval. Imported and hand-written posts share the `posts` table and editor.
 

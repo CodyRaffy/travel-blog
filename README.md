@@ -32,6 +32,10 @@ npm run photos:cluster   # group located photos into candidate stops and name th
 
 Then open [http://localhost:3000/admin/stops/review](http://localhost:3000/admin/stops/review): each candidate shows sample photos, dates, and a suggested name. Approve to create the stop (its photos are attached and the road route from the previous stop is drawn with OSRM), merge candidates that are really one stay, or skip. Re-clustering never re-proposes something you've already approved or skipped.
 
+### Curating photos
+
+From the stop list, **Photos** opens the curation grid for a stop. Approving a candidate already pre-selects ~8 photos (GPS-tagged, spread across the stay, no bursts or screenshots); keep or skip them, browse the rest, drag kept photos to reorder, star one as the cover, add captions. Kept photos are rendered to WebP (480 / 1400 / 2400 px) under the media directory and served to the site; originals stay in Dropbox.
+
 ### Importing Facebook posts
 
 1. On Facebook go to Settings → **Download your information**. Choose **JSON** format, date range **All time**, media quality **High**, and include at least **Posts**.
@@ -58,6 +62,7 @@ Re-running the import is safe — posts already staged are skipped.
 - `npm run db:import-json` - One-time import of `data/stops.json` into SQLite
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Stage posts from a Facebook export for review
 - `npm run photos:scan [-- --force]` - Index the local photo library (exiftool; incremental)
+- `npm run prod -- <script> [args]` - Run a script against the live site's data directory (e.g. `npm run prod -- photos:scan`)
 - `npm run deploy [-- -SkipBuild]` - Build and publish to the home server (see Deploying)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Propose stop candidates
 
@@ -76,6 +81,8 @@ Re-running the import is safe — posts already staged are skipped.
 - `GET /api/stop-candidates?status=` - Photo-derived stop candidates + library stats; `POST` re-clusters
 - `PATCH /api/stop-candidates/[id]` - `{ action: "approve" | "reject" | "reset" | "merge" | "update", ... }`
 - `GET /api/stop-candidates/[id]/photos` - Sample photos for a candidate
+- `GET /api/stops/[id]/gallery` - Public curated photos for a stop
+- `POST /api/stops/[id]/photos/suggest?target=8`, `GET /api/photos?stopId=&status=`, `PATCH /api/photos/[id]`, `POST /api/photos/reorder` - Curation (admin)
 - `GET /api/photos/[id]/thumb?size=320` - JPEG thumbnail of a library photo (cached in `data/cache/`)
 - `POST /api/stops/[id]/route-from-previous` - Redraw a stop's journey line with OSRM road routing
 

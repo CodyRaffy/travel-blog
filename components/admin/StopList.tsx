@@ -48,6 +48,12 @@ export default function StopList({ stops, onDelete }: StopListProps) {
               >
                 Edit
               </Link>
+              <Link
+                href={`/admin/stops/${stop.id}/photos`}
+                style={{ marginRight: "8px", color: "#0070f3" }}
+              >
+                Photos
+              </Link>
               <button
                 onClick={() => {
                   if (confirm(`Delete "${stop.name}"?`)) {

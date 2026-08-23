@@ -88,7 +88,7 @@ export default function StopCandidateReview() {
     const res = await patch(c.id, { action: "approve", ...data });
     if (!res) return;
     setCandidates((cs) => cs.filter((x) => x.id !== c.id));
-    setMessage(`Created stop "${res.stop.name}"${res.routed ? " and drew the road route from the previous stop" : " (no route drawn — first stop or routing unavailable)"}.`);
+    setMessage(`Created stop "${res.stop.name}"${res.routed ? " and drew the road route from the previous stop" : " (no route drawn — first stop or routing unavailable)"}. Next: pick its photos at /admin/stops/${res.stop.id}/photos`);
     loadStops();
     refreshCounts();
   }

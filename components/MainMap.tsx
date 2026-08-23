@@ -33,6 +33,19 @@ const rvIcons = {
   west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
 };
 
+/** Length of a polyline in miles (haversine). */
+function lengthMiles(line: LatLngTuple[]): number {
+  let m = 0;
+  for (let i = 1; i < line.length; i++) {
+    const [aLat, aLon] = line[i - 1];
+    const [bLat, bLon] = line[i];
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const x = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLon - aLon) / 2) ** 2;
+    m += 2 * 3958.8 * Math.asin(Math.sqrt(x));
+  }
+  return m;
+}
+
 /** Point a fraction of the way along a polyline, by distance. */
 function pointAlong(line: LatLngTuple[], frac: number): LatLngTuple {
   if (line.length === 0) return [0, 0];
@@ -84,6 +97,32 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
   const first = stops[0];
   const last = stops[stops.length - 1];
   const facing = useRef<"east" | "west">("east");
+
+  // Odometer: cumulative road miles at the start of each stop's inbound leg.
+  const legMiles = useMemo(
+    () =>
+      stops.map((s, i) => {
+        if (i === 0) return 0;
+        const leg = s.journeyLatLongTuples.length >= 2 ? s.journeyLatLongTuples : [stops[i - 1].latLongTuple, s.latLongTuple];
+        return lengthMiles(leg);
+      }),
+    [stops]
+  );
+  const cumulative = useMemo(() => {
+    const out: number[] = [];
+    let sum = 0;
+    for (const m of legMiles) {
+      sum += m;
+      out.push(sum);
+    }
+    return out;
+  }, [legMiles]);
+  const miles = useMemo(() => {
+    if (stops.length === 0) return 0;
+    const idx = Math.min(Math.floor(position), stops.length - 1);
+    const frac = position - idx;
+    return cumulative[idx] + (stops[idx + 1] ? frac * legMiles[idx + 1] : 0);
+  }, [stops, position, cumulative, legMiles]);
 
   // RV location: on a stop, or along the road leg into the next stop.
   const rvAt = useMemo<LatLngTuple | null>(() => {
@@ -210,7 +249,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         </div>
       )}
 
-      <TripScrubber stops={stops} position={position} onChange={onScrub} />
+      <TripScrubber stops={stops} position={position} onChange={onScrub} miles={miles} totalMiles={cumulative[cumulative.length - 1] ?? 0} />
     </div>
   );
 }

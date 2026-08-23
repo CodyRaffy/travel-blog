@@ -9,9 +9,12 @@ interface TripScrubberProps {
   /** Continuous position: whole numbers are stops, fractions are along the leg to the next stop. */
   position: number;
   onChange: (position: number) => void;
+  /** Road miles driven up to `position`, and for the whole (filtered) trip. */
+  miles: number;
+  totalMiles: number;
 }
 
-export default function TripScrubber({ stops, position, onChange }: TripScrubberProps) {
+export default function TripScrubber({ stops, position, onChange, miles, totalMiles }: TripScrubberProps) {
   const [playing, setPlaying] = useState(false);
   const raf = useRef<number | null>(null);
   const last = useRef<number>(0);
@@ -79,6 +82,10 @@ export default function TripScrubber({ stops, position, onChange }: TripScrubber
         <span className="count">
           {idx + 1} / {stops.length}
         </span>
+      </div>
+      <div className="odometer" title={`${Math.round(totalMiles).toLocaleString()} road miles in total`}>
+        <span className="digits">{Math.round(miles).toLocaleString("en-US").padStart(6, "0")}</span>
+        <span className="unit">mi</span>
       </div>
       <div className="readout">
         {enRoute ? (

@@ -632,3 +632,39 @@
 .rv-marker--west svg {
   transform: scaleX(-1);
 }
+.trip-scrubber {
+  /* room for the odometer in the top-right corner */
+  padding-right: 7.5rem;
+}
+.trip-scrubber .odometer {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  background: #23312b;
+  color: #f6f8f5;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.trip-scrubber .odometer .digits {
+  font-size: 1rem;
+}
+.trip-scrubber .odometer .unit {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+@media (max-width: 640px) {
+  .trip-scrubber {
+    padding-right: 0.9rem;
+  }
+  .trip-scrubber .odometer {
+    position: static;
+    margin-top: 0.4rem;
+  }
+}

@@ -21,16 +21,29 @@ interface MainMapProps {
 const badgeIcon = (text: string) =>
   L.divIcon({ className: "", html: `<span class="marker-badge">${text}</span>`, iconAnchor: [-8, 46] });
 
-const RV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" width="44" height="28">
-  <path d="M4 34 V16 a4 4 0 0 1 4 -4 H40 l12 9 H58 a3 3 0 0 1 3 3 v10 H4 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
-  <rect x="10" y="17" width="10" height="8" rx="1.5" fill="#2e6b4f"/><rect x="24" y="17" width="10" height="8" rx="1.5" fill="#2e6b4f"/>
-  <path d="M41 17 l8 6 H41 Z" fill="#2e6b4f"/><rect x="4" y="29" width="57" height="2.5" fill="#b5472f"/>
-  <circle cx="17" cy="35" r="4.5" fill="#23312b"/><circle cx="17" cy="35" r="1.6" fill="#fff"/>
-  <circle cx="49" cy="35" r="4.5" fill="#23312b"/><circle cx="49" cy="35" r="1.6" fill="#fff"/></svg>`;
+const RV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 46" width="78" height="23">
+  <!-- 38 ft fifth wheel: long body, gooseneck over the truck bed -->
+  <path d="M3 36 V14 a5 5 0 0 1 5 -5 H86 a4 4 0 0 1 4 4 v1 H104 v10 H90 v12 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="9" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/><rect x="27" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/>
+  <rect x="45" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/><rect x="63" y="15" width="16" height="8" rx="1.5" fill="#2e6b4f"/>
+  <rect x="3" y="29" width="87" height="2.5" fill="#b5472f"/>
+  <!-- dually truck: bed with flared rear fender, cab -->
+  <path d="M92 36 V26 h28 V18 a3 3 0 0 1 3 -3 h13 l10 9 h3 a2 2 0 0 1 2 2 v10 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M96 36 a12 7 0 0 1 24 0 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M125 18 h10 l8 7 h-18 Z" fill="#2e6b4f"/>
+  <rect x="92" y="33" width="61" height="2" fill="#b5472f"/>
+  <!-- trailer triple axle -->
+  <circle cx="24" cy="37" r="5" fill="#23312b"/><circle cx="24" cy="37" r="1.8" fill="#fff"/>
+  <circle cx="40" cy="37" r="5" fill="#23312b"/><circle cx="40" cy="37" r="1.8" fill="#fff"/>
+  <circle cx="56" cy="37" r="5" fill="#23312b"/><circle cx="56" cy="37" r="1.8" fill="#fff"/>
+  <!-- dually rear pair + front wheel -->
+  <circle cx="103" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="1.8" fill="#fff"/>
+  <circle cx="140" cy="37" r="5" fill="#23312b"/><circle cx="140" cy="37" r="1.8" fill="#fff"/>
+</svg>`;
 // The RV is a side view: flip it to face the direction of travel (west = left).
 const rvIcons = {
-  east: L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
-  west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
+  east: L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [78, 23], iconAnchor: [39, 21] }),
+  west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [78, 23], iconAnchor: [39, 21] }),
 };
 /** Top-down airplane, rotated to its bearing (0 = north). Used for legs with no road route, e.g. Hawaii. */
 const planeIcon = (bearing: number) =>
@@ -43,8 +56,8 @@ const planeIcon = (bearing: number) =>
     iconAnchor: [18, 18],
   });
 
-/** Legs without a road route that jump a long way are flights (Hawaii; Alaska if flown). */
-const FLIGHT_MIN_MILES = 300;
+/** Legs without a road route that jump more than a short hop are flights or ferries (Hawaii; Alaska if flown). */
+const FLIGHT_MIN_MILES = 60;
 function isFlightLeg(prev: StopInfoResponse, stop: StopInfoResponse): boolean {
   return stop.journeyLatLongTuples.length <= 2 && lengthMiles([prev.latLongTuple, stop.latLongTuple]) > FLIGHT_MIN_MILES;
 }
@@ -217,7 +230,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
                 color: colorFor(yearOf(stop.arrivalDate)),
                 weight: flight ? 2 : 3,
                 opacity: 0.85,
-                dashArray: flight ? "6 8" : undefined,
+                dashArray: flight ? "5 16" : undefined,
               }}
             >
               <Tooltip sticky>

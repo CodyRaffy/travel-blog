@@ -32,6 +32,7 @@ function toResponse(row: StopRow): StopInfoResponse {
     statePark: row.statePark,
     nationalMonument: row.nationalMonument,
     nationalPark: row.nationalPark,
+    armyCorps: row.armyCorps,
     overnightStop: row.overnightStop,
     homeBase: row.homeBase,
     cityStop: row.cityStop,
@@ -89,6 +90,7 @@ export async function createStop(input: CreateStopInput): Promise<StopInfoRespon
       statePark: input.statePark ?? false,
       nationalMonument: input.nationalMonument ?? false,
       nationalPark: input.nationalPark ?? false,
+      armyCorps: input.armyCorps ?? false,
       overnightStop: input.overnightStop ?? false,
       homeBase: input.homeBase ?? false,
       cityStop: input.cityStop ?? false,
@@ -123,6 +125,7 @@ export async function updateStop(
   if (input.statePark !== undefined) patch.statePark = input.statePark;
   if (input.nationalMonument !== undefined) patch.nationalMonument = input.nationalMonument;
   if (input.nationalPark !== undefined) patch.nationalPark = input.nationalPark;
+  if (input.armyCorps !== undefined) patch.armyCorps = input.armyCorps;
   if (input.overnightStop !== undefined) patch.overnightStop = input.overnightStop;
   if (input.homeBase !== undefined) patch.homeBase = input.homeBase;
   if (input.cityStop !== undefined) patch.cityStop = input.cityStop;

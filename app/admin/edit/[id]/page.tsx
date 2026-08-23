@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { LatLngTuple } from "leaflet";
+import { CATEGORY_KEYS, StopCategoryFlags } from "@/lib/categories";
 import { StopInfoResponse } from "@/models/StopInfo";
 import StopForm from "@/components/admin/StopForm";
 
@@ -51,15 +52,9 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
     }
   }
 
-  async function handleDetailsSubmit(data: {
+  async function handleDetailsSubmit(data: StopCategoryFlags & {
     name: string;
     link: string;
-    statePark: boolean;
-    nationalMonument: boolean;
-    nationalPark: boolean;
-    overnightStop: boolean;
-    homeBase: boolean;
-    cityStop: boolean;
     arrivalDate: string;
     departureDate: string;
     latLongTuple: LatLngTuple | null;
@@ -74,12 +69,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
         body: JSON.stringify({
           name: data.name,
           link: data.link,
-          statePark: data.statePark,
-          nationalMonument: data.nationalMonument,
-          nationalPark: data.nationalPark,
-          overnightStop: data.overnightStop,
-          homeBase: data.homeBase,
-          cityStop: data.cityStop,
+          ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, data[k]])),
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,
@@ -200,12 +190,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
               initialData={{
                 name: stop.name,
                 link: stop.link,
-                statePark: stop.statePark,
-                nationalMonument: stop.nationalMonument,
-                nationalPark: stop.nationalPark,
-                overnightStop: stop.overnightStop,
-                homeBase: stop.homeBase,
-                cityStop: stop.cityStop,
+                ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, stop[k]])),
                 arrivalDate: formatDateForInput(stop.arrivalDate),
                 departureDate: formatDateForInput(stop.departureDate),
                 latLongTuple: stop.latLongTuple,

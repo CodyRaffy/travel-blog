@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `army_corps` integer DEFAULT false NOT NULL;

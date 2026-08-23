@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import HelpIcon, { OVERNIGHT_HELP, HOME_HELP, CITY_HELP } from "@/components/admin/HelpIcon";
+import CategoryPicker from "@/components/admin/CategoryPicker";
+import { StopCategoryFlags, emptyFlags } from "@/lib/categories";
 import { homeLocation } from "@/data/ImportantMarkers";
 import { CandidatePhoto, StopCandidateResponse } from "@/models/StopCandidate";
 
@@ -22,17 +23,11 @@ const input: React.CSSProperties = {
   fontSize: "inherit",
 };
 
-export interface ApproveData {
+export interface ApproveData extends StopCategoryFlags {
   name: string;
   arrivalDate: string;
   departureDate: string;
   link: string;
-  statePark: boolean;
-  nationalPark: boolean;
-  overnightStop: boolean;
-  homeBase: boolean;
-  cityStop: boolean;
-  nationalMonument: boolean;
 }
 
 const kmFromHome = (lat: number, lng: number) => {
@@ -74,12 +69,10 @@ export default function StopCandidateCard({
   const [arrival, setArrival] = useState(fmt(c.arrivalDate));
   const [departure, setDeparture] = useState(fmt(c.departureDate));
   const [link, setLink] = useState(c.suggestedLink ?? "");
-  const [statePark, setStatePark] = useState(false);
-  const [nationalPark, setNationalPark] = useState(false);
-  const [overnightStop, setOvernightStop] = useState(false);
-  const [homeBase, setHomeBase] = useState(kmFromHome(c.latLongTuple[0], c.latLongTuple[1]) < 5);
-  const [cityStop, setCityStop] = useState(false);
-  const [nationalMonument, setNationalMonument] = useState(false);
+  const [flags, setFlags] = useState<StopCategoryFlags>(() => ({
+    ...emptyFlags(),
+    homeBase: kmFromHome(c.latLongTuple[0], c.latLongTuple[1]) < 5,
+  }));
   const [photos, setPhotos] = useState<CandidatePhoto[] | null>(null);
   const [showingAll, setShowingAll] = useState(false);
   const [loadingAll, setLoadingAll] = useState(false);
@@ -247,12 +240,7 @@ export default function StopCandidateCard({
                   onChange={(e) => setLink(e.target.value)}
                   style={{ ...input, flex: "1 1 320px" }}
                 />
-                <label><input type="checkbox" checked={statePark} onChange={(e) => setStatePark(e.target.checked)} /> State Park</label>
-                <label><input type="checkbox" checked={nationalPark} onChange={(e) => setNationalPark(e.target.checked)} /> National Park</label>
-                <label><input type="checkbox" checked={nationalMonument} onChange={(e) => setNationalMonument(e.target.checked)} /> Nat&apos;l Monument</label>
-                <label><input type="checkbox" checked={overnightStop} onChange={(e) => setOvernightStop(e.target.checked)} /> Overnight stop <HelpIcon text={OVERNIGHT_HELP} /></label>
-                <label><input type="checkbox" checked={homeBase} onChange={(e) => setHomeBase(e.target.checked)} /> Home base <HelpIcon text={HOME_HELP} /></label>
-                <label><input type="checkbox" checked={cityStop} onChange={(e) => setCityStop(e.target.checked)} /> City / town <HelpIcon text={CITY_HELP} /></label>
+                <CategoryPicker value={flags} onChange={setFlags} compact />
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
                 <button
@@ -263,12 +251,7 @@ export default function StopCandidateCard({
                       arrivalDate: `${arrival}T00:00:00.000Z`,
                       departureDate: `${departure}T00:00:00.000Z`,
                       link: link.trim(),
-                      statePark,
-                      nationalPark,
-                      overnightStop,
-                      homeBase,
-                      cityStop,
-                      nationalMonument,
+                      ...flags,
                     })
                   }
                   style={{ ...btn, background: "#28a745" }}

@@ -10,6 +10,7 @@ export interface StopInfo {
   statePark: boolean;
   nationalMonument: boolean;
   nationalPark: boolean;
+  armyCorps: boolean;
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
@@ -30,6 +31,7 @@ export interface StopInfoResponse {
   statePark: boolean;
   nationalMonument: boolean;
   nationalPark: boolean;
+  armyCorps: boolean;
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
@@ -50,6 +52,7 @@ export interface CreateStopInput {
   statePark: boolean;
   nationalMonument: boolean;
   nationalPark: boolean;
+  armyCorps: boolean;
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
@@ -66,6 +69,7 @@ export interface UpdateStopInput {
   statePark?: boolean;
   nationalMonument?: boolean;
   nationalPark?: boolean;
+  armyCorps?: boolean;
   overnightStop?: boolean;
   homeBase?: boolean;
   cityStop?: boolean;

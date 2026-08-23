@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { LatLngTuple } from "leaflet";
+import { CATEGORY_KEYS, StopCategoryFlags } from "@/lib/categories";
 import StopForm from "@/components/admin/StopForm";
 
 const LocationPicker = dynamic(() => import("@/components/admin/LocationPicker"), {
@@ -17,15 +18,9 @@ export default function AddStopPage() {
   const [selectedLocation, setSelectedLocation] = useState<LatLngTuple | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(data: {
+  async function handleSubmit(data: StopCategoryFlags & {
     name: string;
     link: string;
-    statePark: boolean;
-    nationalMonument: boolean;
-    nationalPark: boolean;
-    overnightStop: boolean;
-    homeBase: boolean;
-    cityStop: boolean;
     arrivalDate: string;
     departureDate: string;
     latLongTuple: LatLngTuple | null;
@@ -40,12 +35,7 @@ export default function AddStopPage() {
         body: JSON.stringify({
           name: data.name,
           link: data.link,
-          statePark: data.statePark,
-          nationalMonument: data.nationalMonument,
-          nationalPark: data.nationalPark,
-          overnightStop: data.overnightStop,
-          homeBase: data.homeBase,
-          cityStop: data.cityStop,
+          ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, data[k]])),
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,

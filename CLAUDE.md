@@ -59,7 +59,7 @@ Server components read the DB directly via `lib/*` (all public pages are `force-
 - **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
 - **app/admin/add/page.tsx** - Form to create new stop with map location picker
 - **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
-Stop categories (booleans): `statePark`, `nationalPark`, `nationalMonument`, `overnightStop`, `homeBase` (house icon), `cityStop` (Harvest Hosts, parking lots, boondocking, one-night waypoints — drawn as a small dot on the map and a compact timeline card; help text in `components/admin/HelpIcon.tsx`).
+Stop categories are boolean columns on `stops`, defined centrally in `lib/categories.ts` (`STOP_CATEGORIES`: statePark, nationalPark, nationalMonument, armyCorps, overnightStop, homeBase, cityStop; label/badge/help per entry). Forms use `components/admin/CategoryPicker.tsx`; lists and public badges use `categoryBadges()`. To add one: schema column + migration, `models/StopInfo.ts`, `lib/stops.ts` mapping, `lib/stopCandidates.ts` ApproveInput, and an entry in `STOP_CATEGORIES`.
 
 - **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
 - **app/admin/stops/[id]/photos/page.tsx** - Photo curation for a stop (Suggested / All / Kept / Skipped; keep, skip, drag-reorder, cover, caption)

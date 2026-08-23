@@ -11,6 +11,7 @@ import { getPosts } from "@/lib/posts";
 import { mediaUrl } from "@/lib/media";
 import { fmtRange, fmtNights } from "@/lib/format";
 import { GalleryPhoto } from "@/models/Photo";
+import { categoryBadges } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -50,14 +51,7 @@ export default async function StopPage({ params }: Params) {
     urls: { thumb: mediaUrl(p.variants!.thumb), medium: mediaUrl(p.variants!.medium), large: mediaUrl(p.variants!.large) },
   }));
   const hero = stop.coverPhotoId ? gallery.find((g) => g.id === stop.coverPhotoId) ?? gallery[0] : gallery[0];
-  const badges = [
-    stop.nationalPark && "National Park",
-    stop.nationalMonument && "National Monument",
-    stop.statePark && "State Park",
-    stop.overnightStop && "Overnight Stop",
-    stop.homeBase && "Home Base",
-    stop.cityStop && "City / Town",
-  ].filter(Boolean) as string[];
+  const badges = categoryBadges(stop);
 
   return (
     <div className="site">

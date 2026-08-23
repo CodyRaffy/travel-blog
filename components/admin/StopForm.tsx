@@ -2,17 +2,12 @@
 
 import { useState } from "react";
 import { LatLngTuple } from "leaflet";
-import HelpIcon, { OVERNIGHT_HELP, HOME_HELP, CITY_HELP } from "@/components/admin/HelpIcon";
+import CategoryPicker from "@/components/admin/CategoryPicker";
+import { CATEGORY_KEYS, StopCategoryFlags, emptyFlags } from "@/lib/categories";
 
-interface StopFormData {
+interface StopFormData extends StopCategoryFlags {
   name: string;
   link: string;
-  statePark: boolean;
-  nationalMonument: boolean;
-  nationalPark: boolean;
-  overnightStop: boolean;
-  homeBase: boolean;
-  cityStop: boolean;
   arrivalDate: string;
   departureDate: string;
   latLongTuple: LatLngTuple | null;
@@ -35,14 +30,11 @@ export default function StopForm({
 }: StopFormProps) {
   const [name, setName] = useState(initialData?.name || "");
   const [link, setLink] = useState(initialData?.link || "");
-  const [statePark, setStatePark] = useState(initialData?.statePark || false);
-  const [nationalMonument, setNationalMonument] = useState(
-    initialData?.nationalMonument || false
-  );
-  const [nationalPark, setNationalPark] = useState(initialData?.nationalPark || false);
-  const [overnightStop, setOvernightStop] = useState(initialData?.overnightStop || false);
-  const [homeBase, setHomeBase] = useState(initialData?.homeBase || false);
-  const [cityStop, setCityStop] = useState(initialData?.cityStop || false);
+  const [flags, setFlags] = useState<StopCategoryFlags>(() => {
+    const f = emptyFlags();
+    for (const k of CATEGORY_KEYS) f[k] = initialData?.[k] ?? false;
+    return f;
+  });
   const [arrivalDate, setArrivalDate] = useState(initialData?.arrivalDate || "");
   const [departureDate, setDepartureDate] = useState(initialData?.departureDate || "");
 
@@ -55,12 +47,7 @@ export default function StopForm({
     onSubmit({
       name,
       link,
-      statePark,
-      nationalMonument,
-      nationalPark,
-      overnightStop,
-      homeBase,
-      cityStop,
+      ...flags,
       arrivalDate,
       departureDate,
       latLongTuple: selectedLocation,
@@ -127,47 +114,8 @@ export default function StopForm({
       </label>
 
       <fieldset style={{ marginBottom: "16px", padding: "12px", border: "1px solid #ccc" }}>
-        <legend>Park Type</legend>
-        <label style={{ marginRight: "16px" }}>
-          <input
-            type="checkbox"
-            checked={statePark}
-            onChange={(e) => setStatePark(e.target.checked)}
-          />{" "}
-          State Park
-        </label>
-        <label style={{ marginRight: "16px" }}>
-          <input
-            type="checkbox"
-            checked={nationalPark}
-            onChange={(e) => setNationalPark(e.target.checked)}
-          />{" "}
-          National Park
-        </label>
-        <label style={{ marginRight: "16px" }}>
-          <input
-            type="checkbox"
-            checked={nationalMonument}
-            onChange={(e) => setNationalMonument(e.target.checked)}
-          />{" "}
-          National Monument
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={overnightStop}
-            onChange={(e) => setOvernightStop(e.target.checked)}
-          />{" "}
-          Overnight Stop <HelpIcon text={OVERNIGHT_HELP} />
-        </label>
-        <label style={{ marginLeft: "16px" }}>
-          <input type="checkbox" checked={homeBase} onChange={(e) => setHomeBase(e.target.checked)} />{" "}
-          Home Base <HelpIcon text={HOME_HELP} />
-        </label>
-        <label style={{ marginLeft: "16px" }}>
-          <input type="checkbox" checked={cityStop} onChange={(e) => setCityStop(e.target.checked)} />{" "}
-          City / Town <HelpIcon text={CITY_HELP} />
-        </label>
+        <legend>Categories</legend>
+        <CategoryPicker value={flags} onChange={setFlags} />
       </fieldset>
 
       <div style={{ marginBottom: "16px" }}>

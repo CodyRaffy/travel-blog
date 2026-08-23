@@ -28,6 +28,8 @@ export const stops = sqliteTable(
     statePark: integer("state_park", { mode: "boolean" }).notNull().default(false),
     nationalMonument: integer("national_monument", { mode: "boolean" }).notNull().default(false),
     nationalPark: integer("national_park", { mode: "boolean" }).notNull().default(false),
+    // U.S. Army Corps of Engineers campground / recreation area.
+    armyCorps: integer("army_corps", { mode: "boolean" }).notNull().default(false),
     // A one-night (or so) stop that isn't a destination: Harvest Host, Cracker Barrel, boondocking, rest area...
     overnightStop: integer("overnight_stop", { mode: "boolean" }).notNull().default(false),
     // Back at home base (Tallahassee) between legs of the trip.

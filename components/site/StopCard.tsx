@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StopInfoResponse } from "@/models/StopInfo";
 import { fmtRange, fmtNights } from "@/lib/format";
+import { categoryBadges } from "@/lib/categories";
 
 export default function StopCard({ stop }: { stop: StopInfoResponse }) {
   return (
@@ -13,9 +14,13 @@ export default function StopCard({ stop }: { stop: StopInfoResponse }) {
       )}
       <div className="body">
         <h3>{stop.name}</h3>
-        {stop.overnightStop && <span className="badge">Overnight</span>}
-        {stop.homeBase && <span className="badge">Home base</span>}
-        {stop.cityStop && <span className="badge">City</span>}
+        {categoryBadges(stop)
+          .filter((b) => ["Overnight", "Home base", "City", "Army Corps"].includes(b))
+          .map((b) => (
+            <span key={b} className="badge">
+              {b}
+            </span>
+          ))}
         <div className="dates">
           {fmtRange(stop.arrivalDate, stop.departureDate)} · {fmtNights(stop.arrivalDate, stop.departureDate)}
         </div>

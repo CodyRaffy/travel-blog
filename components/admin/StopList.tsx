@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { StopInfoResponse } from "@/models/StopInfo";
+import { categoryBadges } from "@/lib/categories";
 
 interface StopListProps {
   stops: StopInfoResponse[];
@@ -38,12 +39,7 @@ export default function StopList({ stops, onDelete }: StopListProps) {
               )}
             </td>
             <td style={{ padding: "8px" }}>
-              {stop.statePark && "State Park"}
-              {stop.nationalPark && "National Park"}
-              {stop.nationalMonument && "National Monument"}
-              {stop.overnightStop && "Overnight Stop"}
-              {stop.homeBase && "Home Base"}
-              {stop.cityStop && "City / Town"}
+              {categoryBadges(stop).join(", ")}
             </td>
             <td style={{ padding: "8px" }}>{formatDate(stop.arrivalDate)}</td>
             <td style={{ padding: "8px" }}>{formatDate(stop.departureDate)}</td>

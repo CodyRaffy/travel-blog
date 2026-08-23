@@ -207,6 +207,7 @@ export interface ApproveInput {
   statePark?: boolean;
   nationalMonument?: boolean;
   nationalPark?: boolean;
+  armyCorps?: boolean;
   overnightStop?: boolean;
   homeBase?: boolean;
   cityStop?: boolean;
@@ -237,6 +238,7 @@ export async function approveStopCandidate(
     statePark: input.statePark ?? false,
     nationalMonument: input.nationalMonument ?? false,
     nationalPark: input.nationalPark ?? false,
+    armyCorps: input.armyCorps ?? false,
     overnightStop: input.overnightStop ?? false,
     homeBase: input.homeBase ?? false,
     cityStop: input.cityStop ?? false,

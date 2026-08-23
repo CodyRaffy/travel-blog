@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { StopCandidateRow } from "@/lib/db/schema";
 import { clusterPhotos, type ClusterOptions } from "@/lib/import/cluster";
-import { reverseGeocode, findNearbyPlace } from "@/lib/geocode";
+import { reverseGeocode } from "@/lib/geocode";
 import { routeStopFromPrevious } from "@/lib/routing";
 import { createStop, getStops } from "@/lib/stops";
 import { suggestStopPhotos } from "@/lib/photos";
@@ -75,19 +75,14 @@ export async function generateStopCandidates(
       continue;
     }
     let name: string | null = null;
-    let link: string | null = null;
     if (opts.geocode !== false) {
-      // A named campground/park nearby beats the town/county from reverse geocoding.
-      const place = await findNearbyPlace(c.latitude, c.longitude);
-      name = place?.name ?? (await reverseGeocode(c.latitude, c.longitude));
-      link = place?.website ?? null;
+      name = await reverseGeocode(c.latitude, c.longitude);
       if (name) result.geocoded++;
     }
     db.insert(stopCandidates)
       .values({
         id: crypto.randomUUID(),
         suggestedName: name,
-        suggestedLink: link,
         latitude: c.latitude,
         longitude: c.longitude,
         arrivalDate: `${c.arrivalDate}T00:00:00.000Z`,
@@ -132,25 +127,6 @@ export async function getCandidatePhotos(id: string, limit = 12) {
     .where(inArray(photos.id, sample))
     .orderBy(asc(photos.takenAt))
     .all();
-}
-
-/**
- * Look up the nearest named campground/park for a candidate and fill in its
- * name (only if the current name is still the geocoder's town/county guess or
- * empty) and website. Returns the place found, if any.
- */
-export async function lookupStopCandidatePlace(id: string): Promise<{ candidate: StopCandidateResponse; place: { name: string; website: string | null } | null } | null> {
-  const cand = db.select().from(stopCandidates).where(eq(stopCandidates.id, id)).get();
-  if (!cand) return null;
-  const place = await findNearbyPlace(cand.latitude, cand.longitude);
-  const set: Partial<typeof stopCandidates.$inferInsert> = { updatedAt: new Date().toISOString() };
-  if (place) {
-    if (place.website) set.suggestedLink = place.website;
-    const geocoderGuess = await reverseGeocode(cand.latitude, cand.longitude);
-    if (!cand.suggestedName || cand.suggestedName === geocoderGuess) set.suggestedName = place.name;
-  }
-  const row = db.update(stopCandidates).set(set).where(eq(stopCandidates.id, id)).returning().get()!;
-  return { candidate: toResponse(row), place: place ? { name: place.name, website: place.website } : null };
 }
 
 export async function updateStopCandidate(

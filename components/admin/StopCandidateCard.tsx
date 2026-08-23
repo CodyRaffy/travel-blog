@@ -52,7 +52,6 @@ interface Props {
   onReset: () => void;
   onMergeInto: (targetId: string) => void;
   onRename: (name: string) => void;
-  onLookup: () => Promise<{ name: string; website: string | null } | null>;
 }
 
 const fmt = (iso: string) => iso.slice(0, 10);
@@ -69,14 +68,11 @@ export default function StopCandidateCard({
   onReset,
   onMergeInto,
   onRename,
-  onLookup,
 }: Props) {
   const [name, setName] = useState(c.suggestedName ?? "");
   const [arrival, setArrival] = useState(fmt(c.arrivalDate));
   const [departure, setDeparture] = useState(fmt(c.departureDate));
   const [link, setLink] = useState(c.suggestedLink ?? "");
-  const [lookingUp, setLookingUp] = useState(false);
-  const [lookupNote, setLookupNote] = useState<string | null>(null);
   const [statePark, setStatePark] = useState(false);
   const [nationalPark, setNationalPark] = useState(false);
   const [overnightStop, setOvernightStop] = useState(false);
@@ -107,20 +103,6 @@ export default function StopCandidateCard({
     setLink(c.suggestedLink ?? "");
   }, [c.suggestedName, c.suggestedLink, c.arrivalDate, c.departureDate]);
 
-  async function lookup() {
-    setLookingUp(true);
-    setLookupNote(null);
-    try {
-      const place = await onLookup();
-      setLookupNote(
-        place
-          ? `Found "${place.name}"${place.website ? " with website" : " (no website on record)"}`
-          : "No named campground or park found within 2 km"
-      );
-    } finally {
-      setLookingUp(false);
-    }
-  }
 
   useEffect(() => {
     if (!selected || photos) return;
@@ -256,25 +238,13 @@ export default function StopCandidateCard({
                 <label>
                   Left <input type="date" value={departure} onChange={(e) => setDeparture(e.target.value)} style={input} />
                 </label>
-                <span style={{ display: "flex", gap: "6px", alignItems: "center", flex: "1 1 360px" }}>
-                  <input
-                    type="url"
-                    value={link}
-                    placeholder="Website (optional)"
-                    onChange={(e) => setLink(e.target.value)}
-                    style={{ ...input, flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={lookup}
-                    disabled={lookingUp}
-                    title="Find the nearest campground/park in OpenStreetMap and fill in its name and website"
-                    style={{ ...btn, background: "#6c757d", whiteSpace: "nowrap" }}
-                  >
-                    {lookingUp ? "Looking up…" : "Look up"}
-                  </button>
-                </span>
-                {lookupNote && <span style={{ color: "#555", fontSize: "0.9em", flexBasis: "100%" }}>{lookupNote}</span>}
+                <input
+                  type="url"
+                  value={link}
+                  placeholder="Website (optional)"
+                  onChange={(e) => setLink(e.target.value)}
+                  style={{ ...input, flex: "1 1 320px" }}
+                />
                 <label><input type="checkbox" checked={statePark} onChange={(e) => setStatePark(e.target.checked)} /> State Park</label>
                 <label><input type="checkbox" checked={nationalPark} onChange={(e) => setNationalPark(e.target.checked)} /> National Park</label>
                 <label><input type="checkbox" checked={nationalMonument} onChange={(e) => setNationalMonument(e.target.checked)} /> Nat&apos;l Monument</label>

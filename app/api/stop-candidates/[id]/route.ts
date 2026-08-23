@@ -5,7 +5,6 @@ import {
   rejectStopCandidate,
   resetStopCandidate,
   updateStopCandidate,
-  lookupStopCandidatePlace,
   type ApproveInput,
 } from "@/lib/stopCandidates";
 
@@ -15,7 +14,6 @@ type Action =
   | ({ action: "approve" } & ApproveInput)
   | { action: "reject" }
   | { action: "reset" }
-  | { action: "lookup" }
   | { action: "merge"; sourceIds: string[] }
   | {
       action: "update";
@@ -42,9 +40,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       break;
     case "reset":
       result = await resetStopCandidate(id);
-      break;
-    case "lookup":
-      result = await lookupStopCandidatePlace(id);
       break;
     case "merge":
       result = await mergeStopCandidates(id, body.sourceIds ?? []);

@@ -1,10 +1,25 @@
 import { asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { StopRow } from "@/lib/db/schema";
+import { mediaUrl } from "@/lib/media";
 import { StopInfoResponse, CreateStopInput, UpdateStopInput } from "@/models/StopInfo";
 import { slugify } from "@/lib/slug";
 
-const { stops } = schema;
+const { stops, photos } = schema;
+
+/** Public URL of the cover photo's medium variant, or the first kept photo's, if any. */
+function coverUrlFor(row: StopRow): string | null {
+  const pick = row.coverPhotoId
+    ? db.select({ v: photos.variants }).from(photos).where(eq(photos.id, row.coverPhotoId)).get()
+    : db
+        .select({ v: photos.variants })
+        .from(photos)
+        .where(eq(photos.stopId, row.id))
+        .orderBy(asc(photos.sortOrder))
+        .all()
+        .find((p) => p.v);
+  return pick?.v ? mediaUrl(pick.v.medium) : null;
+}
 
 function toResponse(row: StopRow): StopInfoResponse {
   return {
@@ -21,6 +36,7 @@ function toResponse(row: StopRow): StopInfoResponse {
     departureDate: row.departureDate,
     journeyLatLongTuples: row.journeyLatLongTuples,
     coverPhotoId: row.coverPhotoId,
+    coverUrl: coverUrlFor(row),
   };
 }
 

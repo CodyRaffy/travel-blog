@@ -31,6 +31,8 @@ export interface StopInfoResponse {
   departureDate: string;
   journeyLatLongTuples: LatLngTuple[];
   coverPhotoId: string | null;
+  /** Public URL of the cover image (medium variant), derived. */
+  coverUrl: string | null;
 }
 
 // Type for creating a new stop (no id, no journey waypoints yet; slug derived from name)

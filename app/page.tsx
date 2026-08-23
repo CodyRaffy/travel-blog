@@ -1,12 +1,15 @@
-"use client";
+import SiteHeader from "@/components/site/SiteHeader";
+import HomeMap from "@/components/site/HomeMap";
+import { getStops } from "@/lib/stops";
 
-import dynamic from "next/dynamic";
+export const dynamic = "force-dynamic";
 
-const MainMap = dynamic(() => import("@/components/MainMap"), {
-  ssr: false,
-  loading: () => <p>Loading map...</p>,
-});
-
-export default function Home() {
-  return <MainMap />;
+export default async function Home() {
+  const stops = await getStops();
+  return (
+    <div className="site">
+      <SiteHeader overlay />
+      <HomeMap stops={stops} />
+    </div>
+  );
 }

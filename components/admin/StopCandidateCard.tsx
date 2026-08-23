@@ -67,6 +67,8 @@ export default function StopCandidateCard({
   const [overnightStop, setOvernightStop] = useState(false);
   const [nationalMonument, setNationalMonument] = useState(false);
   const [photos, setPhotos] = useState<CandidatePhoto[] | null>(null);
+  const [showingAll, setShowingAll] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
   const [mergeTarget, setMergeTarget] = useState("");
 
   useEffect(() => {
@@ -82,6 +84,17 @@ export default function StopCandidateCard({
       .then(setPhotos)
       .catch(() => setPhotos([]));
   }, [selected, photos, c.id]);
+
+  async function loadAll() {
+    setLoadingAll(true);
+    try {
+      const r = await fetch(`/api/stop-candidates/${c.id}/photos?limit=all`);
+      setPhotos(await r.json());
+      setShowingAll(true);
+    } finally {
+      setLoadingAll(false);
+    }
+  }
 
   const pending = c.status === "pending";
   const n = nights(c.arrivalDate, c.departureDate);
@@ -123,7 +136,7 @@ export default function StopCandidateCard({
 
       {selected && (
         <div onClick={(e) => e.stopPropagation()} style={{ marginTop: "10px" }}>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", minHeight: "90px" }}>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", minHeight: "90px", maxHeight: showingAll ? "60vh" : undefined, overflowY: showingAll ? "auto" : undefined }}>
             {photos === null ? (
               <span style={{ color: "#888" }}>Loading photos…</span>
             ) : photos.length === 0 ? (
@@ -143,6 +156,15 @@ export default function StopCandidateCard({
               ))
             )}
           </div>
+          {photos && photos.length > 0 && !showingAll && c.photoCount > photos.length && (
+            <button
+              onClick={loadAll}
+              disabled={loadingAll}
+              style={{ background: "none", border: "none", color: "#0070f3", cursor: "pointer", padding: "6px 0", fontSize: "0.9em" }}
+            >
+              {loadingAll ? "Loading…" : `Show all ${c.photoCount} photos`}
+            </button>
+          )}
 
           {pending && (
             <>

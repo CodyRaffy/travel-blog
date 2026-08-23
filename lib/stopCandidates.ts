@@ -119,7 +119,7 @@ export async function getCandidatePhotos(id: string, limit = 12) {
   const ids = cand.photoIds;
   if (ids.length === 0) return [];
   const step = Math.max(1, Math.floor(ids.length / limit));
-  const sample = ids.filter((_, i) => i % step === 0).slice(0, limit);
+  const sample = limit >= ids.length ? ids : ids.filter((_, i) => i % step === 0).slice(0, limit);
   return db
     .select({ id: photos.id, path: photos.dropboxPath, takenAt: photos.takenAt, width: photos.width, height: photos.height })
     .from(photos)

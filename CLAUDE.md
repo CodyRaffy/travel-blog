@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run db:import-json` - One-time import of legacy `data/stops.json`
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Parse a Facebook export and stage posts into `post_candidates`
 - `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites\travel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
-- `npm run prod -- <script> [args]` - Run any script above against the production data dir (`C:\websites\_data	ravel-blog`)
+- `npm run prod -- <script> [args]` - Run any script above against the production data dir (`C:\websites\_data\travel-blog`)
 - `npm run photos:scan [-- --force]` - exiftool scan of the local photo library into `photos` (incremental via `scanned_files`)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Cluster into `stop_candidates`
 

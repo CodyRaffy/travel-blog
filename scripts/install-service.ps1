@@ -26,6 +26,9 @@ param(
     # AUD is the Application Audience tag shown on the Access application.
     [string]$CfAccessTeamDomain = '',
     [string]$CfAccessAud = '',
+    # Account allowed to start/stop the service without elevation (for `npm run deploy`).
+    # Defaults to whoever runs this script.
+    [string]$DeployUser = "$env:USERDOMAIN\$env:USERNAME",
     [string]$WinSWUrl = 'https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe'
 )
 
@@ -105,6 +108,21 @@ if ($existing) {
     & $exe install
 }
 & $exe start
+
+# Let the (non-elevated) deploying user start/stop this one service, so
+# `npm run deploy` doesn't need an admin prompt. Adds an ACE for the current
+# user (the account running this elevated script) to the service's DACL.
+if ($DeployUser) {
+    $sid = (New-Object System.Security.Principal.NTAccount($DeployUser)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    $sddl = (& sc.exe sdshow $ServiceName | Where-Object { $_ -match '^D:' }).Trim()
+    $ace = "(A;;CCLCSWRPWPDTLOCRRC;;;$sid)"   # query, start, stop, pause, interrogate
+    if ($sddl -notlike "*$sid*") {
+        $dacl, $sacl = $sddl -split '(?=S:)', 2
+        $newSddl = "$dacl$ace$sacl"
+        & sc.exe sdset $ServiceName $newSddl | Out-Null
+        Write-Host "Granted $DeployUser start/stop rights on $ServiceName." -ForegroundColor Cyan
+    }
+}
 
 Start-Sleep -Seconds 3
 try {

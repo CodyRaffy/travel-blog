@@ -76,7 +76,7 @@ async function main() {
   console.log(`Copied ${copied} media files to ${MEDIA_DIR}${missing ? ` (${missing} referenced files missing from export)` : ""}`);
   console.log(`Staged ${inserted} new post candidates (${posts.length - inserted} already staged)`);
   if (relinked) console.log(`Updated stop suggestions on ${relinked} pending candidates`);
-  console.log("Review them at http://localhost:3000/admin/posts/review");
+  console.log("Review them at http://localhost:2323/admin/posts/review (prod) or :3000 (dev)");
 }
 
 main().catch((err) => {

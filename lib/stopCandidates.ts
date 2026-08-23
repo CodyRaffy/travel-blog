@@ -6,6 +6,7 @@ import { reverseGeocode } from "@/lib/geocode";
 import { routeStopFromPrevious } from "@/lib/routing";
 import { createStop, getStops } from "@/lib/stops";
 import { suggestStopPhotos } from "@/lib/photos";
+import { relinkPendingCandidates } from "@/lib/posts";
 import type { StopInfoResponse } from "@/models/StopInfo";
 import type { StopCandidateResponse, StopCandidateStatus } from "@/models/StopCandidate";
 
@@ -269,6 +270,8 @@ export async function approveStopCandidate(
   if (input.route !== false) routed = await routeStopFromPrevious(stop.id);
   // Pre-pick a gallery so curation starts from a suggestion instead of a blank grid.
   await suggestStopPhotos(stop.id).catch(() => 0);
+  // Imported posts waiting in the queue may belong to this new stop.
+  await relinkPendingCandidates().catch(() => 0);
 
   const updated = db.select().from(stopCandidates).where(eq(stopCandidates.id, id)).get()!;
   const finalStop = (await getStops()).find((s) => s.id === stop.id)!;

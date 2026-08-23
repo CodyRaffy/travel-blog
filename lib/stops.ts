@@ -33,6 +33,7 @@ function toResponse(row: StopRow): StopInfoResponse {
     nationalMonument: row.nationalMonument,
     nationalPark: row.nationalPark,
     overnightStop: row.overnightStop,
+    homeBase: row.homeBase,
     arrivalDate: row.arrivalDate,
     departureDate: row.departureDate,
     journeyLatLongTuples: row.journeyLatLongTuples,
@@ -88,6 +89,7 @@ export async function createStop(input: CreateStopInput): Promise<StopInfoRespon
       nationalMonument: input.nationalMonument ?? false,
       nationalPark: input.nationalPark ?? false,
       overnightStop: input.overnightStop ?? false,
+      homeBase: input.homeBase ?? false,
       arrivalDate: input.arrivalDate,
       departureDate: input.departureDate,
       journeyLatLongTuples: [],
@@ -120,6 +122,7 @@ export async function updateStop(
   if (input.nationalMonument !== undefined) patch.nationalMonument = input.nationalMonument;
   if (input.nationalPark !== undefined) patch.nationalPark = input.nationalPark;
   if (input.overnightStop !== undefined) patch.overnightStop = input.overnightStop;
+  if (input.homeBase !== undefined) patch.homeBase = input.homeBase;
   if (input.arrivalDate !== undefined) patch.arrivalDate = input.arrivalDate;
   if (input.departureDate !== undefined) patch.departureDate = input.departureDate;
   if (input.journeyLatLongTuples !== undefined) patch.journeyLatLongTuples = input.journeyLatLongTuples;

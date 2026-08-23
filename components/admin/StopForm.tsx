@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LatLngTuple } from "leaflet";
-import HelpIcon, { OVERNIGHT_HELP } from "@/components/admin/HelpIcon";
+import HelpIcon, { OVERNIGHT_HELP, HOME_HELP } from "@/components/admin/HelpIcon";
 
 interface StopFormData {
   name: string;
@@ -11,6 +11,7 @@ interface StopFormData {
   nationalMonument: boolean;
   nationalPark: boolean;
   overnightStop: boolean;
+  homeBase: boolean;
   arrivalDate: string;
   departureDate: string;
   latLongTuple: LatLngTuple | null;
@@ -39,6 +40,7 @@ export default function StopForm({
   );
   const [nationalPark, setNationalPark] = useState(initialData?.nationalPark || false);
   const [overnightStop, setOvernightStop] = useState(initialData?.overnightStop || false);
+  const [homeBase, setHomeBase] = useState(initialData?.homeBase || false);
   const [arrivalDate, setArrivalDate] = useState(initialData?.arrivalDate || "");
   const [departureDate, setDepartureDate] = useState(initialData?.departureDate || "");
 
@@ -55,6 +57,7 @@ export default function StopForm({
       nationalMonument,
       nationalPark,
       overnightStop,
+      homeBase,
       arrivalDate,
       departureDate,
       latLongTuple: selectedLocation,
@@ -153,6 +156,10 @@ export default function StopForm({
             onChange={(e) => setOvernightStop(e.target.checked)}
           />{" "}
           Overnight Stop <HelpIcon text={OVERNIGHT_HELP} />
+        </label>
+        <label style={{ marginLeft: "16px" }}>
+          <input type="checkbox" checked={homeBase} onChange={(e) => setHomeBase(e.target.checked)} />{" "}
+          Home Base <HelpIcon text={HOME_HELP} />
         </label>
       </fieldset>
 

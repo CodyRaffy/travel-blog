@@ -14,6 +14,7 @@ export default function StopCard({ stop }: { stop: StopInfoResponse }) {
       <div className="body">
         <h3>{stop.name}</h3>
         {stop.overnightStop && <span className="badge">Overnight</span>}
+        {stop.homeBase && <span className="badge">Home base</span>}
         <div className="dates">
           {fmtRange(stop.arrivalDate, stop.departureDate)} · {fmtNights(stop.arrivalDate, stop.departureDate)}
         </div>

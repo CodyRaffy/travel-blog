@@ -3,6 +3,9 @@
 export const OVERNIGHT_HELP =
   "A place you only slept, not a destination: Harvest Hosts, Cracker Barrel or Walmart lots, boondocking, rest areas, a one-night campsite on the way somewhere. Shown smaller on the map and timeline.";
 
+export const HOME_HELP =
+  "Back at home base in Tallahassee between legs of the trip. Shown with the house icon on the map.";
+
 /** Small circled "?" that shows `text` on hover / focus. */
 export default function HelpIcon({ text }: { text: string }) {
   return (

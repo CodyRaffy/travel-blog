@@ -150,7 +150,8 @@ export async function findNearbyPlace(lat: number, lng: number, radiusM = 2000):
       const d = distKm(lat, lng, c.lat, c.lon);
       let score = 0;
       if (t.boundary === "national_park" || t.boundary === "protected_area") score += 4;
-      if (t.leisure === "nature_reserve" || t.leisure === "park") score += 3;
+      if (t.leisure === "nature_reserve") score += 3;
+      if (t.leisure === "park") score += 1; // city parks are usually a false positive near home
       if (t.tourism === "camp_site" || t.tourism === "caravan_site") score += 3;
       if (el.type !== "node") score += 1; // an area beats a pin
       if (/\b(group camp|loop|site \d|campsite \d|pavilion|picnic|playground|dog park|trailhead)\b/i.test(name)) score -= 4;

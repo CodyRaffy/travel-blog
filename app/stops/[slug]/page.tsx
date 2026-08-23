@@ -55,6 +55,7 @@ export default async function StopPage({ params }: Params) {
     stop.nationalMonument && "National Monument",
     stop.statePark && "State Park",
     stop.overnightStop && "Overnight Stop",
+    stop.homeBase && "Home Base",
   ].filter(Boolean) as string[];
 
   return (

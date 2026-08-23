@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `home_base` integer DEFAULT false NOT NULL;

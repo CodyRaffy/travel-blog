@@ -58,6 +58,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
     nationalMonument: boolean;
     nationalPark: boolean;
     overnightStop: boolean;
+    homeBase: boolean;
     arrivalDate: string;
     departureDate: string;
     latLongTuple: LatLngTuple | null;
@@ -76,6 +77,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
           nationalMonument: data.nationalMonument,
           nationalPark: data.nationalPark,
           overnightStop: data.overnightStop,
+          homeBase: data.homeBase,
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,
@@ -200,6 +202,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
                 nationalMonument: stop.nationalMonument,
                 nationalPark: stop.nationalPark,
                 overnightStop: stop.overnightStop,
+                homeBase: stop.homeBase,
                 arrivalDate: formatDateForInput(stop.arrivalDate),
                 departureDate: formatDateForInput(stop.departureDate),
                 latLongTuple: stop.latLongTuple,

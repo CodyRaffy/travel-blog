@@ -34,9 +34,11 @@ export default function MainMap({ stops }: MainMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <Marker position={homeLocation} icon={homeIcon}>
-          <Tooltip>Home base · Tallahassee, FL</Tooltip>
-        </Marker>
+        {!stops.some((s) => s.homeBase) && (
+          <Marker position={homeLocation} icon={homeIcon}>
+            <Tooltip>Home base · Tallahassee, FL</Tooltip>
+          </Marker>
+        )}
 
         {stops.map((stop, index) => (
           <Polyline
@@ -71,7 +73,11 @@ export default function MainMap({ stops }: MainMapProps) {
             </Popup>
           );
           // Overnight stops (Harvest Hosts, parking lots, boondocking) are a dot, not a destination pin.
-          return stop.overnightStop ? (
+          return stop.homeBase ? (
+            <Marker key={stop.id} position={stop.latLongTuple} icon={homeIcon}>
+              {popup}
+            </Marker>
+          ) : stop.overnightStop ? (
             <CircleMarker
               key={stop.id}
               center={stop.latLongTuple}

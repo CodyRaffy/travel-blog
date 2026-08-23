@@ -231,6 +231,7 @@ export interface ApproveInput {
   nationalMonument?: boolean;
   nationalPark?: boolean;
   overnightStop?: boolean;
+  homeBase?: boolean;
   /** Generate the road route from the previous stop (default true). */
   route?: boolean;
 }
@@ -259,6 +260,7 @@ export async function approveStopCandidate(
     nationalMonument: input.nationalMonument ?? false,
     nationalPark: input.nationalPark ?? false,
     overnightStop: input.overnightStop ?? false,
+    homeBase: input.homeBase ?? false,
     arrivalDate: input.arrivalDate ?? cand.arrivalDate,
     departureDate: input.departureDate ?? cand.departureDate,
   });

@@ -24,6 +24,41 @@ export default function PhotoCurator({ stop, onStopChange }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<PhotoResponse | null>(null);
+  const lightboxIndex = lightbox ? photos.findIndex((p) => p.id === lightbox.id) : -1;
+  const stepLightbox = useCallback(
+    (d: number) => {
+      setLightbox((cur) => {
+        if (!cur || photos.length === 0) return cur;
+        const i = photos.findIndex((p) => p.id === cur.id);
+        return photos[(i + d + photos.length) % photos.length];
+      });
+    },
+    [photos]
+  );
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "ArrowRight") stepLightbox(1);
+      if (e.key === "ArrowLeft") stepLightbox(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox, stepLightbox]);
+  const navBtn = (side: "left" | "right"): React.CSSProperties => ({
+    position: "absolute",
+    [side]: 12,
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "rgba(255,255,255,.15)",
+    color: "white",
+    border: "none",
+    fontSize: 28,
+    width: 44,
+    height: 64,
+    borderRadius: 8,
+    cursor: "pointer",
+  });
 
   const load = useCallback(
     async (t: Tab) => {
@@ -246,10 +281,30 @@ export default function PhotoCurator({ stop, onStopChange }: Props) {
       {lightbox && (
         <div
           onClick={() => setLightbox(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, cursor: "zoom-out" }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, zIndex: 1000, cursor: "zoom-out" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={thumb(lightbox, 1280)} alt="" style={{ maxWidth: "95vw", maxHeight: "95vh", objectFit: "contain" }} />
+          <img src={thumb(lightbox, 1280)} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "95vw", maxHeight: "86vh", objectFit: "contain" }} />
+          <div style={{ color: "white", opacity: 0.85, fontSize: "0.9em", display: "flex", gap: 12, alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
+            <span>
+              {lightbox.takenAt ? new Date(lightbox.takenAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : ""} · {lightboxIndex + 1} / {photos.length}
+            </span>
+            {lightbox.curationStatus !== "kept" ? (
+              <button onClick={() => setStatus(lightbox, "kept")} style={{ ...btn, background: "#28a745", padding: "4px 10px" }}>Keep</button>
+            ) : (
+              <span style={{ color: "#9be29b" }}>kept</span>
+            )}
+            {lightbox.curationStatus !== "skipped" && (
+              <button onClick={() => setStatus(lightbox, "skipped")} style={{ ...btn, background: "#dc3545", padding: "4px 10px" }}>Skip</button>
+            )}
+            <span style={{ opacity: 0.6 }}>← → browse · Esc close</span>
+          </div>
+          {photos.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); stepLightbox(-1); }} aria-label="Previous" style={navBtn("left")}>‹</button>
+              <button onClick={(e) => { e.stopPropagation(); stepLightbox(1); }} aria-label="Next" style={navBtn("right")}>›</button>
+            </>
+          )}
         </div>
       )}
     </div>

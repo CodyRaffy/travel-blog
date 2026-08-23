@@ -668,3 +668,10 @@
     margin-top: 0.4rem;
   }
 }
+
+.plane-marker {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+.plane-marker svg {
+  transition: transform 0.3s ease;
+}

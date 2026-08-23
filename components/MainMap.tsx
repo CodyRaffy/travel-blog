@@ -32,6 +32,31 @@ const rvIcons = {
   east: L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
   west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
 };
+/** Top-down airplane, rotated to its bearing (0 = north). Used for legs with no road route, e.g. Hawaii. */
+const planeIcon = (bearing: number) =>
+  L.divIcon({
+    className: "plane-marker",
+    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="36" height="36" style="transform: rotate(${bearing.toFixed(0)}deg)">
+      <path d="M32 4 c3 0 5 3 5 8 v12 l22 13 v6 l-22 -7 v11 l6 5 v5 l-11 -3 l-11 3 v-5 l6 -5 v-11 l-22 7 v-6 l22 -13 v-12 c0 -5 2 -8 5 -8 z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+    </svg>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+
+/** Legs without a road route that jump a long way are flights (Hawaii; Alaska if flown). */
+const FLIGHT_MIN_MILES = 300;
+function isFlightLeg(prev: StopInfoResponse, stop: StopInfoResponse): boolean {
+  return stop.journeyLatLongTuples.length <= 2 && lengthMiles([prev.latLongTuple, stop.latLongTuple]) > FLIGHT_MIN_MILES;
+}
+
+/** Initial compass bearing from a to b, degrees clockwise from north. */
+function bearing(a: LatLngTuple, b: LatLngTuple): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLon = toRad(b[1] - a[1]);
+  const y = Math.sin(dLon) * Math.cos(toRad(b[0]));
+  const x = Math.cos(toRad(a[0])) * Math.sin(toRad(b[0])) - Math.sin(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.cos(dLon);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
 
 /** Length of a polyline in miles (haversine). */
 function lengthMiles(line: LatLngTuple[]): number {
@@ -97,6 +122,9 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
   const first = stops[0];
   const last = stops[stops.length - 1];
   const facing = useRef<"east" | "west">("east");
+  // Debounce direction changes: only flip after the heading has disagreed for a sustained stretch.
+  const contrary = useRef(0);
+  const FLIP_AFTER = 6; // consecutive position updates (~6% of a leg when playing)
 
   // Odometer: cumulative road miles at the start of each stop's inbound leg.
   const legMiles = useMemo(
@@ -124,21 +152,34 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
     return cumulative[idx] + (stops[idx + 1] ? frac * legMiles[idx + 1] : 0);
   }, [stops, position, cumulative, legMiles]);
 
-  // RV location: on a stop, or along the road leg into the next stop.
-  const rvAt = useMemo<LatLngTuple | null>(() => {
+  // Vehicle location: on a stop, or along the leg into the next stop (road or flight).
+  const vehicle = useMemo<{ at: LatLngTuple; mode: "drive" | "fly"; bearing: number } | null>(() => {
     if (stops.length === 0) return null;
     const idx = Math.min(Math.floor(position), stops.length - 1);
     const frac = position - idx;
     const next = stops[idx + 1];
-    if (frac < 0.001 || !next) return stops[idx].latLongTuple;
+    if (frac < 0.001 || !next) return { at: stops[idx].latLongTuple, mode: "drive", bearing: 0 };
+    if (isFlightLeg(stops[idx], next)) {
+      const a = stops[idx].latLongTuple;
+      const b = next.latLongTuple;
+      return { at: [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac], mode: "fly", bearing: bearing(a, b) };
+    }
     const leg = next.journeyLatLongTuples.length >= 2 ? next.journeyLatLongTuples : [stops[idx].latLongTuple, next.latLongTuple];
     const here = pointAlong(leg, frac);
     // Heading: compare with a point slightly further along the same leg.
     const ahead = pointAlong(leg, Math.min(1, frac + 0.01));
     const dLng = ahead[1] - here[1];
-    if (Math.abs(dLng) > 1e-6) facing.current = dLng < 0 ? "west" : "east";
-    return here;
+    if (Math.abs(dLng) > 1e-6) {
+      const want = dLng < 0 ? "west" : "east";
+      if (want === facing.current) contrary.current = 0;
+      else if (++contrary.current >= FLIP_AFTER) {
+        facing.current = want;
+        contrary.current = 0;
+      }
+    }
+    return { at: here, mode: "drive", bearing: 0 };
   }, [stops, position]);
+  const rvAt = vehicle?.at ?? null;
 
   const toggleYear = (y: number) =>
     setActiveYears((cur) => {
@@ -165,15 +206,26 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
           </Marker>
         )}
 
-        {stops.map((stop, index) => (
-          <Polyline
-            key={`leg-${stop.id}`}
-            positions={stop.journeyLatLongTuples}
-            pathOptions={{ color: colorFor(yearOf(stop.arrivalDate)), weight: 3, opacity: 0.85 }}
-          >
-            <Tooltip sticky>{index > 0 ? `${stops[index - 1].name} → ${stop.name}` : `To ${stop.name}`}</Tooltip>
-          </Polyline>
-        ))}
+        {stops.map((stop, index) => {
+          const flight = index > 0 && isFlightLeg(stops[index - 1], stop);
+          const positions = flight ? [stops[index - 1].latLongTuple, stop.latLongTuple] : stop.journeyLatLongTuples;
+          return (
+            <Polyline
+              key={`leg-${stop.id}`}
+              positions={positions}
+              pathOptions={{
+                color: colorFor(yearOf(stop.arrivalDate)),
+                weight: flight ? 2 : 3,
+                opacity: 0.85,
+                dashArray: flight ? "6 8" : undefined,
+              }}
+            >
+              <Tooltip sticky>
+                {index > 0 ? `${stops[index - 1].name} → ${stop.name}${flight ? " (flight)" : ""}` : `To ${stop.name}`}
+              </Tooltip>
+            </Polyline>
+          );
+        })}
 
         {stops.map((stop, index) => {
           const popup = (
@@ -223,7 +275,14 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
 
         {first && <Marker position={first.latLongTuple} icon={badgeIcon("Start")} interactive={false} />}
         {last && last !== first && <Marker position={last.latLongTuple} icon={badgeIcon("End")} interactive={false} />}
-        {rvAt && <Marker position={rvAt} icon={rvIcons[facing.current]} interactive={false} zIndexOffset={1000} />}
+        {vehicle && (
+          <Marker
+            position={vehicle.at}
+            icon={vehicle.mode === "fly" ? planeIcon(vehicle.bearing) : rvIcons[facing.current]}
+            interactive={false}
+            zIndexOffset={1000}
+          />
+        )}
       </MapContainer>
 
       {allYears.length > 0 && (
@@ -249,7 +308,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         </div>
       )}
 
-      <TripScrubber stops={stops} position={position} onChange={onScrub} miles={miles} totalMiles={cumulative[cumulative.length - 1] ?? 0} />
+      <TripScrubber stops={stops} position={position} onChange={onScrub} miles={miles} totalMiles={cumulative[cumulative.length - 1] ?? 0} flying={vehicle?.mode === "fly"} />
     </div>
   );
 }

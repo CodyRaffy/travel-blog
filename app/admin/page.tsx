@@ -58,6 +58,9 @@ export default function AdminPage() {
           <Link href="/admin/posts" style={{ marginRight: "16px", color: "#0070f3" }}>
             Posts
           </Link>
+          <Link href="/admin/stops/review" style={{ marginRight: "16px", color: "#0070f3" }}>
+            Review photo stops
+          </Link>
           <Link
             href="/admin/add"
             style={{

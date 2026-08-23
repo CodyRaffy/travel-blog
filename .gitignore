@@ -37,3 +37,6 @@ next-env.d.ts
 
 # imported / curated media (served via /api/media)
 /data/media/
+
+# derived thumbnails / resized images (regenerable)
+/data/cache/

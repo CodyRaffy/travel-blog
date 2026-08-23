@@ -13,6 +13,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run db:studio` - Browse the database in Drizzle Studio
 - `npm run db:import-json` - One-time import of legacy `data/stops.json`
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Parse a Facebook export and stage posts into `post_candidates`
+- `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites	ravel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
+- `npm run photos:scan [-- --force]` - exiftool scan of the local photo library into `photos` (incremental via `scanned_files`)
+- `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Cluster into `stop_candidates`
 
 ## Architecture
 
@@ -27,7 +30,7 @@ app/admin/        - Admin pages for managing stops
 components/       - React components
 components/admin/ - Admin-specific components
 data/             - SQLite database (travel-blog.db) and media/ (both gitignored), legacy stops.json
-lib/import/       - Importers (facebook.ts: export parser)
+lib/import/       - Importers: config.ts (env-overridable settings), facebook.ts, photoScan.ts, cluster.ts
 drizzle/          - Generated SQL migrations (commit these)
 lib/              - Server-side data access functions
 lib/db/           - Drizzle schema (schema.ts) and shared connection (index.ts)
@@ -48,6 +51,7 @@ public/           - Static assets (images, leaflet icons)
 - **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
 - **app/admin/add/page.tsx** - Form to create new stop with map location picker
 - **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
+- **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
 - **app/admin/posts/page.tsx** - List all blog posts
 - **app/admin/posts/review/page.tsx** - Review queue for imported post candidates (approve / re-assign stop / skip)
 - **app/admin/posts/new/page.tsx**, **app/admin/posts/[id]/page.tsx** - Create / edit a post
@@ -58,6 +62,7 @@ public/           - Static assets (images, leaflet icons)
 - **components/admin/StopForm.tsx** - Reusable form for stop details
 - **components/admin/LocationPicker.tsx** - Map for selecting stop location
 - **components/admin/WaypointEditor.tsx** - Interactive map for adding/removing journey waypoints
+- **components/admin/StopCandidateReview.tsx**, **StopCandidateCard.tsx**, **CandidateMap.tsx** - Stop candidate review UI
 - **components/admin/PostForm.tsx** - Shared form for creating/editing posts
 - **components/admin/PostCandidateReview.tsx** - Import review queue UI
 - **components/admin/MediaStrip.tsx** - Thumbnail row for a post's media
@@ -70,6 +75,9 @@ public/           - Static assets (images, leaflet icons)
 - **app/api/post-candidates/route.ts** - GET queue + counts; POST re-runs stop matching
 - **app/api/post-candidates/[id]/route.ts** - PATCH `{ action: approve|reject|reset|suggest, stopId? }`
 - **app/api/media/[...path]/route.ts** - Serves files from `MEDIA_DIR` (path-traversal safe)
+- **app/api/stop-candidates/route.ts**, **[id]/route.ts**, **[id]/photos/route.ts** - Candidate queue; POST re-clusters; PATCH actions approve/reject/reset/merge/update
+- **app/api/photos/[id]/thumb/route.ts** - Cached JPEG thumbnails (sharp; exiftool embedded preview for HEIC/video)
+- **app/api/stops/[id]/route-from-previous/route.ts** - OSRM road route from the chronologically previous stop
 
 ### Data Layer
 
@@ -78,15 +86,27 @@ public/           - Static assets (images, leaflet icons)
 - **lib/stops.ts** - Data access functions (getStops, getStopById, getStopBySlug, createStop, updateStop, deleteStop). Maps DB rows to `StopInfoResponse`; slugs are derived from the name and kept unique.
 - **lib/posts.ts** - Posts CRUD, candidate staging/approval, and `suggestStopForDate()` (stop whose stay contains the date; departure day inclusive; tightest range wins; null = ambiguous)
 - **lib/import/facebook.ts** - Parses `your_posts*.json` from a Facebook export (old and new layouts), fixes Facebook's Latin-1-escaped UTF-8 (`fixMojibake`), extracts text/media/place. Built against Facebook's documented format; adjust here if a real export differs.
+- **lib/import/config.ts** - Photo pipeline settings: `PHOTO_LIBRARY_DIR` (C:\Dropbox), `PHOTO_ROOTS`, `TRIP_START`/`TRIP_END` (Dec 2020 – Apr 2024), `EXIFTOOL`, clustering thresholds, Nominatim/OSRM endpoints
+- **lib/import/photoScan.ts** - Walks the library, runs exiftool in batches on new/changed files only (ledger in `scanned_files`), upserts in-range photos. Paths stored relative to the library root with forward slashes and a leading slash. `takenAt` is naive camera-local time.
+- **lib/import/cluster.ts** - Pure clustering: per-day dominant location (5 km grid) → chain days within `CLUSTER_RADIUS_KM` and `CLUSTER_MAX_GAP_DAYS` → drop clusters under `CLUSTER_MIN_DAYS` and `CLUSTER_MIN_PHOTOS`
+- **lib/stopCandidates.ts** - Generate (replaces pending; skips clusters overlapping existing stops or decided candidates), approve (creates stop, attaches cluster photos + unlocated photos in the date range, draws OSRM route), merge, reject, reset
+- **lib/geocode.ts** - Nominatim reverse geocoding, 1 req/s, cached in `geocode_cache` keyed by ~1 km rounded coords
+- **lib/routing.ts** - OSRM `roadRoute()`, thinned to ≤400 points
+- **lib/thumbs.ts** - Thumbnail generation into `CACHE_DIR` (`data/cache`)
 - **lib/media.ts** - `MEDIA_DIR` (default `data/media`), `resolveMediaPath()`, `mediaUrl()`
 - **lib/slug.ts** - `slugify()` helper
 - **data/stops.json** - Legacy JSON data, kept only as the source for `npm run db:import-json`
 - **models/StopInfo.ts** - TypeScript interfaces: `StopInfo`, `StopInfoResponse`, `CreateStopInput`, `UpdateStopInput`
 - **data/ImportantMarkers.ts** - Fixed locations (current location, home, center of USA)
 
-Import flow: importer script → `post_candidates` (staging) → admin review → `posts`. Nothing reaches `posts` without approval. Imported and hand-written posts share the `posts` table and editor.
+Import flows: `photos:scan` → `photos` → `photos:cluster` → `stop_candidates` → admin review → `stops` (photos get `stopId`); Facebook importer → `post_candidates` → admin review → `posts`. Nothing reaches `posts` without approval. Imported and hand-written posts share the `posts` table and editor.
 
 Schema changes: edit `lib/db/schema.ts`, run `npm run db:generate`, and commit the new file in `drizzle/`. Never hand-edit generated migrations.
+
+### Deployment & security
+
+- `next.config.js` sets `output: "standalone"`; `scripts/deploy.ps1` publishes `.next/standalone` + `.next/static` + `public` + `drizzle` to `C:\websites	ravel-blog` and restarts the WinSW-wrapped `travel-blog` service (`scripts/install-service.ps1`, elevated, writes `C:\websites\_services	ravel-blog	ravel-blog.xml` with the production env). Production data is in `C:\websites\_data	ravel-blog`.
+- `proxy.ts` (Next 16 middleware) gates `/admin`, non-GET `/api/*`, `/api/*-candidates` and `/api/photos/*`: allowed from localhost (no `CF-Connecting-IP` header), or with a valid Cloudflare Access JWT when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are set; otherwise 403. Keep new admin/write routes under those prefixes so they stay covered.
 
 ### Leaflet Integration
 

@@ -68,16 +68,19 @@ export const posts = sqliteTable(
   ]
 );
 
-// Every photo known to the system (scanned from Dropbox). Only curated ones get web variants.
+// Every trip photo known to the system (scanned from the local Dropbox folder).
+// Only curated ones get web variants.
 export const photos = sqliteTable(
   "photos",
   {
     id: text("id").primaryKey(),
-    // Dropbox path (lowercase, as returned by the API): the canonical identity of the original.
+    // Path relative to PHOTO_LIBRARY_DIR, e.g. "/Pictures/2021/March 2021/2021-03-01 13.26.03.jpg".
+    // Because the library is a synced Dropbox folder this is also the Dropbox cloud path.
     dropboxPath: text("dropbox_path").notNull(),
     dropboxRev: text("dropbox_rev"),
     fileName: text("file_name").notNull(),
     sizeBytes: integer("size_bytes"),
+    // Capture time as written by the camera: naive local time, no zone ("2021-03-01T13:26:03").
     takenAt: text("taken_at"),
     latitude: real("latitude"),
     longitude: real("longitude"),
@@ -153,6 +156,26 @@ export const postCandidates = sqliteTable(
     index("post_candidates_status_idx").on(t.status),
   ]
 );
+
+// Ledger of every file seen by the photo scanner (in range or not), so rescans
+// only run exiftool on new/changed files.
+export const scannedFiles = sqliteTable("scanned_files", {
+  path: text("path").primaryKey(),
+  size: integer("size").notNull(),
+  mtimeMs: integer("mtime_ms").notNull(),
+  // 1 when the file produced a `photos` row (inside the trip date range).
+  inRange: integer("in_range", { mode: "boolean" }).notNull().default(false),
+  scannedAt: text("scanned_at").notNull().default(now),
+});
+
+// Reverse-geocoding results keyed by rounded "lat,lng" so we never hit Nominatim twice for one place.
+export const geocodeCache = sqliteTable("geocode_cache", {
+  key: text("key").primaryKey(),
+  // Short display name, e.g. "Moab, UT"
+  name: text("name").notNull(),
+  raw: text("raw", { mode: "json" }),
+  createdAt: text("created_at").notNull().default(now),
+});
 
 // ---- JSON column types -----------------------------------------------------
 

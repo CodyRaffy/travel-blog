@@ -11,16 +11,21 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:import-json": "tsx scripts/import-stops-json.ts",
-    "import:facebook": "tsx scripts/import-facebook.ts"
+    "import:facebook": "tsx scripts/import-facebook.ts",
+    "photos:scan": "tsx scripts/scan-photos.ts",
+    "photos:cluster": "tsx scripts/cluster-photos.ts",
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.10",
     "leaflet": "^1.9.4",
     "next": "^16.0.8",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

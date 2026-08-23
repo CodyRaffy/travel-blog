@@ -4,6 +4,7 @@ import type { StopRow } from "@/lib/db/schema";
 import { mediaUrl } from "@/lib/media";
 import { StopInfoResponse, CreateStopInput, UpdateStopInput } from "@/models/StopInfo";
 import { slugify } from "@/lib/slug";
+import { DEFAULT_VEHICLE, type VehicleKey } from "@/lib/vehicles";
 
 const { stops, photos } = schema;
 
@@ -36,6 +37,7 @@ function toResponse(row: StopRow): StopInfoResponse {
     overnightStop: row.overnightStop,
     homeBase: row.homeBase,
     cityStop: row.cityStop,
+    vehicle: row.vehicle as VehicleKey,
     arrivalDate: row.arrivalDate,
     departureDate: row.departureDate,
     journeyLatLongTuples: row.journeyLatLongTuples,
@@ -94,6 +96,7 @@ export async function createStop(input: CreateStopInput): Promise<StopInfoRespon
       overnightStop: input.overnightStop ?? false,
       homeBase: input.homeBase ?? false,
       cityStop: input.cityStop ?? false,
+      vehicle: input.vehicle ?? DEFAULT_VEHICLE,
       arrivalDate: input.arrivalDate,
       departureDate: input.departureDate,
       journeyLatLongTuples: [],
@@ -129,6 +132,7 @@ export async function updateStop(
   if (input.overnightStop !== undefined) patch.overnightStop = input.overnightStop;
   if (input.homeBase !== undefined) patch.homeBase = input.homeBase;
   if (input.cityStop !== undefined) patch.cityStop = input.cityStop;
+  if (input.vehicle !== undefined) patch.vehicle = input.vehicle;
   if (input.arrivalDate !== undefined) patch.arrivalDate = input.arrivalDate;
   if (input.departureDate !== undefined) patch.departureDate = input.departureDate;
   if (input.journeyLatLongTuples !== undefined) patch.journeyLatLongTuples = input.journeyLatLongTuples;
@@ -141,4 +145,15 @@ export async function updateStop(
 export async function deleteStop(id: string): Promise<boolean> {
   const result = db.delete(stops).where(eq(stops.id, id)).run();
   return result.changes > 0;
+}
+
+/** Set the vehicle on every stop whose arrival falls in [from, to] (ISO dates). Returns count. */
+export async function setVehicleForRange(vehicle: VehicleKey, from: string, to: string): Promise<number> {
+  const rows = db.select({ id: stops.id, arrivalDate: stops.arrivalDate }).from(stops).all();
+  const ids = rows.filter((r) => r.arrivalDate.slice(0, 10) >= from.slice(0, 10) && r.arrivalDate.slice(0, 10) <= to.slice(0, 10)).map((r) => r.id);
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    for (const id of ids) tx.update(stops).set({ vehicle, updatedAt: now }).where(eq(stops.id, id)).run();
+  });
+  return ids.length;
 }

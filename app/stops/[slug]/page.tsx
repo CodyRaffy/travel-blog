@@ -12,6 +12,7 @@ import { mediaUrl } from "@/lib/media";
 import { fmtRange, fmtNights } from "@/lib/format";
 import { GalleryPhoto } from "@/models/Photo";
 import { categoryBadges } from "@/lib/categories";
+import { vehicleByKey } from "@/lib/vehicles";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export default async function StopPage({ params }: Params) {
   }));
   const hero = stop.coverPhotoId ? gallery.find((g) => g.id === stop.coverPhotoId) ?? gallery[0] : gallery[0];
   const badges = categoryBadges(stop);
+  if (stop.vehicle !== "fifth_wheel") badges.push(vehicleByKey(stop.vehicle).label);
 
   return (
     <div className="site">

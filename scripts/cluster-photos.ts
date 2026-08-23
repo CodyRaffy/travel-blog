@@ -23,7 +23,7 @@ generateStopCandidates({
 })
   .then((r) => {
     console.log(
-      `${r.clusters} clusters → ${r.proposed} new candidates (${r.skippedAlreadyHandled} overlap existing stops/decisions), ${r.geocoded} named.`
+      `${r.clusters} clusters → ${r.proposed} new candidates (${r.skippedAlreadyHandled} overlap existing stops/decisions, ${r.skippedAtHome} near home outside the RV years), ${r.geocoded} named.`
     );
     console.log("Review them at http://localhost:3000/admin/stops/review");
   })

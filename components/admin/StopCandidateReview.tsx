@@ -162,7 +162,7 @@ export default function StopCandidateReview() {
     try {
       const r = await fetch("/api/stop-candidates", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       const res = await r.json();
-      setMessage(`${res.clusters} clusters → ${res.proposed} candidates (${res.skippedAlreadyHandled} already handled).`);
+      setMessage(`${res.clusters} clusters → ${res.proposed} candidates (${res.skippedAlreadyHandled} already handled, ${res.skippedAtHome} near home outside the RV years).`);
       setStatus("pending");
       load("pending");
     } catch (e) {

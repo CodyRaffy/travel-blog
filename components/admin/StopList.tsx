@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { StopInfoResponse } from "@/models/StopInfo";
 import { categoryBadges } from "@/lib/categories";
+import { vehicleByKey } from "@/lib/vehicles";
 
 interface StopListProps {
   stops: StopInfoResponse[];
@@ -40,6 +41,9 @@ export default function StopList({ stops, onDelete }: StopListProps) {
             </td>
             <td style={{ padding: "8px" }}>
               {categoryBadges(stop).join(", ")}
+              {stop.vehicle !== "fifth_wheel" && (
+                <span style={{ color: "#555" }}> · {vehicleByKey(stop.vehicle).label}</span>
+              )}
             </td>
             <td style={{ padding: "8px" }}>{formatDate(stop.arrivalDate)}</td>
             <td style={{ padding: "8px" }}>{formatDate(stop.departureDate)}</td>

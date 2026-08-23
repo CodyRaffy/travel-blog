@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `vehicle` text DEFAULT 'fifth_wheel' NOT NULL;

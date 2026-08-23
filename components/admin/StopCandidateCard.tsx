@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import CategoryPicker from "@/components/admin/CategoryPicker";
 import { StopCategoryFlags, emptyFlags } from "@/lib/categories";
+import { VEHICLES, defaultVehicleFor, type VehicleKey } from "@/lib/vehicles";
 import { homeLocation } from "@/data/ImportantMarkers";
 import { CandidatePhoto, StopCandidateResponse } from "@/models/StopCandidate";
 
@@ -24,6 +25,7 @@ const input: React.CSSProperties = {
 };
 
 export interface ApproveData extends StopCategoryFlags {
+  vehicle: VehicleKey;
   name: string;
   arrivalDate: string;
   departureDate: string;
@@ -69,6 +71,7 @@ export default function StopCandidateCard({
   const [arrival, setArrival] = useState(fmt(c.arrivalDate));
   const [departure, setDeparture] = useState(fmt(c.departureDate));
   const [link, setLink] = useState(c.suggestedLink ?? "");
+  const [vehicle, setVehicle] = useState<VehicleKey>(defaultVehicleFor(c.arrivalDate));
   const [flags, setFlags] = useState<StopCategoryFlags>(() => ({
     ...emptyFlags(),
     homeBase: kmFromHome(c.latLongTuple[0], c.latLongTuple[1]) < 5,
@@ -241,6 +244,16 @@ export default function StopCandidateCard({
                   style={{ ...input, flex: "1 1 320px" }}
                 />
                 <CategoryPicker value={flags} onChange={setFlags} compact />
+                <label>
+                  Vehicle{" "}
+                  <select value={vehicle} onChange={(e) => setVehicle(e.target.value as VehicleKey)} style={input}>
+                    {VEHICLES.map((v) => (
+                      <option key={v.key} value={v.key}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
                 <button
@@ -252,6 +265,7 @@ export default function StopCandidateCard({
                       departureDate: `${departure}T00:00:00.000Z`,
                       link: link.trim(),
                       ...flags,
+                      vehicle,
                     })
                   }
                   style={{ ...btn, background: "#28a745" }}

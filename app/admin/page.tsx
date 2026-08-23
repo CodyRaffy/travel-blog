@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StopInfoResponse } from "@/models/StopInfo";
 import StopList from "@/components/admin/StopList";
+import { VEHICLES } from "@/lib/vehicles";
 
 export default function AdminPage() {
   const [stops, setStops] = useState<StopInfoResponse[]>([]);
@@ -34,6 +35,16 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Failed to delete stop:", error);
     }
+  }
+
+  const [vehForm, setVehForm] = useState({ vehicle: "minivan", from: "", to: "" });
+  async function handleSetVehicle() {
+    if (!vehForm.from || !vehForm.to) return alert("Pick a from and to date.");
+    const r = await fetch("/api/stops", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(vehForm) });
+    const res = await r.json();
+    if (!r.ok) return alert(res.error ?? "Failed");
+    alert(`Set vehicle on ${res.updated} stops.`);
+    fetchStops();
   }
 
   async function handleRerouteAll() {
@@ -94,6 +105,27 @@ export default function AdminPage() {
             Add New Stop
           </Link>
         </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", margin: "0 0 16px", padding: "10px 12px", background: "#f3f5f3", borderRadius: "6px" }}>
+        <strong>Set vehicle by date range:</strong>
+        <select value={vehForm.vehicle} onChange={(e) => setVehForm({ ...vehForm, vehicle: e.target.value })}>
+          {VEHICLES.map((v) => (
+            <option key={v.key} value={v.key}>
+              {v.label}
+            </option>
+          ))}
+        </select>
+        <label>
+          from <input type="date" value={vehForm.from} onChange={(e) => setVehForm({ ...vehForm, from: e.target.value })} />
+        </label>
+        <label>
+          to <input type="date" value={vehForm.to} onChange={(e) => setVehForm({ ...vehForm, to: e.target.value })} />
+        </label>
+        <button onClick={handleSetVehicle} style={{ background: "#0070f3", color: "white", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>
+          Apply
+        </button>
+        <span style={{ color: "#555", fontSize: "0.9em" }}>Applies to stops whose arrival date is in the range (the vehicle is drawn on the leg into each stop).</span>
       </div>
 
       {stops.length === 0 ? (

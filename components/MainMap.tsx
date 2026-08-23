@@ -10,6 +10,7 @@ import { homeIcon } from "@/utils/HomeIcon";
 import { StopInfoResponse } from "@/models/StopInfo";
 import { fmtRange, fmtNights, yearOf } from "@/lib/format";
 import TripScrubber from "@/components/site/TripScrubber";
+import { VEHICLES, vehicleByKey, type VehicleKey } from "@/lib/vehicles";
 
 /** One colour per trip year; legs are coloured by the year the leg was driven. */
 const YEAR_COLORS = ["#b5472f", "#2e6b4f", "#c9901a", "#3f5fa8", "#7b4a9e", "#1f8a8a"];
@@ -21,30 +22,16 @@ interface MainMapProps {
 const badgeIcon = (text: string) =>
   L.divIcon({ className: "", html: `<span class="marker-badge">${text}</span>`, iconAnchor: [-8, 46] });
 
-const RV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 46" width="78" height="23">
-  <!-- 38 ft fifth wheel: long body, gooseneck over the truck bed -->
-  <path d="M3 36 V14 a5 5 0 0 1 5 -5 H86 a4 4 0 0 1 4 4 v1 H104 v7 H90 v15 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
-  <rect x="9" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/><rect x="27" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/>
-  <rect x="45" y="15" width="12" height="8" rx="1.5" fill="#2e6b4f"/><rect x="63" y="15" width="16" height="8" rx="1.5" fill="#2e6b4f"/>
-  <rect x="3" y="29" width="87" height="2.5" fill="#b5472f"/>
-  <!-- dually truck (grey): pickup bed with side walls under the gooseneck, flared rear fender, cab -->
-  <path d="M92 36 V21 h2 v4 h24 V18 a3 3 0 0 1 3 -3 h13 l10 9 h3 a2 2 0 0 1 2 2 v10 Z" fill="#8d959a" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
-  <rect x="94" y="21" width="24" height="2.5" fill="#6b7479"/>
-  <path d="M96 36 a12 7 0 0 1 24 0 Z" fill="#8d959a" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M125 18 h10 l8 7 h-18 Z" fill="#2a3338"/>
-  <rect x="92" y="33" width="61" height="2" fill="#5f686d"/>
-  <!-- trailer tandem axle -->
-  <circle cx="30" cy="37" r="5" fill="#23312b"/><circle cx="30" cy="37" r="1.8" fill="#fff"/>
-  <circle cx="46" cy="37" r="5" fill="#23312b"/><circle cx="46" cy="37" r="1.8" fill="#fff"/>
-  <!-- dually rear pair + front wheel -->
-  <circle cx="103" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="1.8" fill="#fff"/>
-  <circle cx="140" cy="37" r="5" fill="#23312b"/><circle cx="140" cy="37" r="1.8" fill="#fff"/>
-</svg>`;
-// The RV is a side view: flip it to face the direction of travel (west = left).
-const rvIcons = {
-  east: L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [78, 23], iconAnchor: [39, 21] }),
-  west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [78, 23], iconAnchor: [39, 21] }),
-};
+// Vehicles are side views facing east; flipped with CSS to face west. One icon per vehicle per facing.
+const vehicleIcons = Object.fromEntries(
+  VEHICLES.map((v) => [
+    v.key,
+    {
+      east: L.divIcon({ className: "rv-marker", html: v.svg, iconSize: v.size, iconAnchor: v.anchor }),
+      west: L.divIcon({ className: "rv-marker rv-marker--west", html: v.svg, iconSize: v.size, iconAnchor: v.anchor }),
+    },
+  ])
+) as Record<VehicleKey, { east: L.DivIcon; west: L.DivIcon }>;
 /** Top-down airplane, rotated to its bearing (0 = north). Used for legs with no road route, e.g. Hawaii. */
 const planeIcon = (bearing: number) =>
   L.divIcon({
@@ -166,16 +153,17 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
   }, [stops, position, cumulative, legMiles]);
 
   // Vehicle location: on a stop, or along the leg into the next stop (road or flight).
-  const vehicle = useMemo<{ at: LatLngTuple; mode: "drive" | "fly"; bearing: number } | null>(() => {
+  const vehicle = useMemo<{ at: LatLngTuple; mode: "drive" | "fly"; bearing: number; kind: VehicleKey } | null>(() => {
     if (stops.length === 0) return null;
     const idx = Math.min(Math.floor(position), stops.length - 1);
     const frac = position - idx;
     const next = stops[idx + 1];
-    if (frac < 0.001 || !next) return { at: stops[idx].latLongTuple, mode: "drive", bearing: 0 };
+    if (frac < 0.001 || !next) return { at: stops[idx].latLongTuple, mode: "drive", bearing: 0, kind: vehicleByKey(stops[idx].vehicle).key };
+    const kind = vehicleByKey(next.vehicle).key; // the vehicle that drove this leg
     if (isFlightLeg(stops[idx], next)) {
       const a = stops[idx].latLongTuple;
       const b = next.latLongTuple;
-      return { at: [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac], mode: "fly", bearing: bearing(a, b) };
+      return { at: [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac], mode: "fly", bearing: bearing(a, b), kind };
     }
     const leg = next.journeyLatLongTuples.length >= 2 ? next.journeyLatLongTuples : [stops[idx].latLongTuple, next.latLongTuple];
     const here = pointAlong(leg, frac);
@@ -190,7 +178,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         contrary.current = 0;
       }
     }
-    return { at: here, mode: "drive", bearing: 0 };
+    return { at: here, mode: "drive", bearing: 0, kind };
   }, [stops, position]);
   const rvAt = vehicle?.at ?? null;
 
@@ -291,7 +279,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         {vehicle && (
           <Marker
             position={vehicle.at}
-            icon={vehicle.mode === "fly" ? planeIcon(vehicle.bearing) : rvIcons[facing.current]}
+            icon={vehicle.mode === "fly" ? planeIcon(vehicle.bearing) : vehicleIcons[vehicle.kind][facing.current]}
             interactive={false}
             zIndexOffset={1000}
           />

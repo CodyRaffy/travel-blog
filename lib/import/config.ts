@@ -12,9 +12,16 @@ export const PHOTO_ROOTS = (process.env.PHOTO_ROOTS ?? "Camera Uploads,Camera Up
   .map((s) => s.trim())
   .filter(Boolean);
 
-/** Only photos taken in [TRIP_START, TRIP_END) are imported. Naive local ISO. */
-export const TRIP_START = process.env.TRIP_START ?? "2020-12-01T00:00:00";
-export const TRIP_END = process.env.TRIP_END ?? "2024-05-01T00:00:00";
+/**
+ * Only photos taken in [TRIP_START, TRIP_END) are imported. Naive local ISO.
+ * Wider than the RV years so pre- and post-trip travel is covered too; see
+ * RV_TRIP_START/END in lib/vehicles.ts for the RV window itself.
+ */
+export const TRIP_START = process.env.TRIP_START ?? "2018-09-01T00:00:00";
+export const TRIP_END = process.env.TRIP_END ?? "2027-01-01T00:00:00";
+
+/** Outside the RV years, clusters this close to home are just daily life, not travel: skipped. */
+export const HOME_RADIUS_KM = Number(process.env.HOME_RADIUS_KM ?? 40);
 
 export const EXIFTOOL = process.env.EXIFTOOL ?? "C:\\Program Files\\exiftool-13.45_64\\exiftool.exe";
 

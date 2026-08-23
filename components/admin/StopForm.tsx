@@ -4,8 +4,10 @@ import { useState } from "react";
 import { LatLngTuple } from "leaflet";
 import CategoryPicker from "@/components/admin/CategoryPicker";
 import { CATEGORY_KEYS, StopCategoryFlags, emptyFlags } from "@/lib/categories";
+import { VEHICLES, DEFAULT_VEHICLE, type VehicleKey } from "@/lib/vehicles";
 
 interface StopFormData extends StopCategoryFlags {
+  vehicle: VehicleKey;
   name: string;
   link: string;
   arrivalDate: string;
@@ -30,6 +32,7 @@ export default function StopForm({
 }: StopFormProps) {
   const [name, setName] = useState(initialData?.name || "");
   const [link, setLink] = useState(initialData?.link || "");
+  const [vehicle, setVehicle] = useState<VehicleKey>(initialData?.vehicle ?? DEFAULT_VEHICLE);
   const [flags, setFlags] = useState<StopCategoryFlags>(() => {
     const f = emptyFlags();
     for (const k of CATEGORY_KEYS) f[k] = initialData?.[k] ?? false;
@@ -48,6 +51,7 @@ export default function StopForm({
       name,
       link,
       ...flags,
+      vehicle,
       arrivalDate,
       departureDate,
       latLongTuple: selectedLocation,
@@ -117,6 +121,15 @@ export default function StopForm({
         <legend>Categories</legend>
         <CategoryPicker value={flags} onChange={setFlags} />
       </fieldset>
+
+      <label style={{ display: "block", marginBottom: "4px" }}>Vehicle (drawn on the map for the leg into this stop)</label>
+      <select value={vehicle} onChange={(e) => setVehicle(e.target.value as VehicleKey)} style={{ ...inputStyle }}>
+        {VEHICLES.map((v) => (
+          <option key={v.key} value={v.key}>
+            {v.label} — {v.description}
+          </option>
+        ))}
+      </select>
 
       <div style={{ marginBottom: "16px" }}>
         <strong>Location:</strong>{" "}

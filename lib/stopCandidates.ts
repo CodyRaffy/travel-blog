@@ -5,6 +5,9 @@ import { clusterPhotos, type ClusterOptions } from "@/lib/import/cluster";
 import { reverseGeocode } from "@/lib/geocode";
 import { routeStopFromPrevious, rerouteAllStops } from "@/lib/routing";
 import { createStop, getStops } from "@/lib/stops";
+import { defaultVehicleFor, RV_TRIP_START, RV_TRIP_END, type VehicleKey } from "@/lib/vehicles";
+import { HOME_RADIUS_KM } from "@/lib/import/config";
+import { homeLocation } from "@/data/ImportantMarkers";
 import { suggestStopPhotos } from "@/lib/photos";
 import { relinkPendingCandidates } from "@/lib/posts";
 import type { StopInfoResponse } from "@/models/StopInfo";
@@ -28,12 +31,18 @@ function toResponse(row: StopCandidateRow): StopCandidateResponse {
 }
 
 const DAY_MS = 86400000;
+const kmBetween = (aLat: number, aLon: number, bLat: number, bLon: number) => {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const x = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLon - aLon) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(x));
+};
 const overlaps = (a1: string, a2: string, b1: string, b2: string) => a1.slice(0, 10) <= b2.slice(0, 10) && b1.slice(0, 10) <= a2.slice(0, 10);
 
 export interface GenerateResult {
   clusters: number;
   proposed: number;
   skippedAlreadyHandled: number;
+  skippedAtHome: number;
   geocoded: number;
 }
 
@@ -69,10 +78,16 @@ export async function generateStopCandidates(
 
   db.delete(stopCandidates).where(eq(stopCandidates.status, "pending")).run();
 
-  const result: GenerateResult = { clusters: clusters.length, proposed: 0, skippedAlreadyHandled: 0, geocoded: 0 };
+  const result: GenerateResult = { clusters: clusters.length, proposed: 0, skippedAlreadyHandled: 0, skippedAtHome: 0, geocoded: 0 };
   for (const c of clusters) {
     if (handled.some((h) => overlaps(c.arrivalDate, c.departureDate, h.a, h.d))) {
       result.skippedAlreadyHandled++;
+      continue;
+    }
+    // Before/after the RV years, time near home isn't a trip.
+    const inRvYears = c.arrivalDate >= RV_TRIP_START && c.arrivalDate <= RV_TRIP_END;
+    if (!inRvYears && kmBetween(c.latitude, c.longitude, homeLocation[0], homeLocation[1]) <= HOME_RADIUS_KM) {
+      result.skippedAtHome++;
       continue;
     }
     let name: string | null = null;
@@ -211,6 +226,7 @@ export interface ApproveInput {
   overnightStop?: boolean;
   homeBase?: boolean;
   cityStop?: boolean;
+  vehicle?: VehicleKey;
   /** Generate the road route from the previous stop (default true). */
   route?: boolean;
 }
@@ -242,6 +258,7 @@ export async function approveStopCandidate(
     overnightStop: input.overnightStop ?? false,
     homeBase: input.homeBase ?? false,
     cityStop: input.cityStop ?? false,
+    vehicle: input.vehicle ?? defaultVehicleFor(input.arrivalDate ?? cand.arrivalDate),
     arrivalDate: input.arrivalDate ?? cand.arrivalDate,
     departureDate: input.departureDate ?? cand.departureDate,
   });
@@ -285,11 +302,7 @@ export async function approveStopCandidate(
 
 // ---- bulk approval ---------------------------------------------------------------
 
-const kmBetween = (aLat: number, aLon: number, bLat: number, bLon: number) => {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const x = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLon - aLon) / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(x));
-};
+
 
 export interface BulkApproveResult {
   approved: number;

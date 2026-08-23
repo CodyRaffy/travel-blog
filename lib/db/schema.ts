@@ -36,6 +36,8 @@ export const stops = sqliteTable(
     homeBase: integer("home_base", { mode: "boolean" }).notNull().default(false),
     // A city / town visit: the place itself was the point, not a park.
     cityStop: integer("city_stop", { mode: "boolean" }).notNull().default(false),
+    // How we travelled for this stop: "fifth_wheel" | "minivan" | "motorhome" (see lib/vehicles.ts).
+    vehicle: text("vehicle").notNull().default("fifth_wheel"),
     arrivalDate: text("arrival_date").notNull(),
     departureDate: text("departure_date").notNull(),
     // Waypoints of the journey *to* this stop: [[lat, lng], ...]

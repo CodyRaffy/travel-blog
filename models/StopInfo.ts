@@ -1,4 +1,5 @@
 import { LatLngTuple } from "leaflet";
+import type { VehicleKey } from "@/lib/vehicles";
 
 export interface StopInfo {
   id: string;
@@ -14,6 +15,7 @@ export interface StopInfo {
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
+  vehicle: VehicleKey;
   arrivalDate: Date;
   departureDate: Date;
   journeyLatLongTuples: LatLngTuple[];
@@ -35,6 +37,7 @@ export interface StopInfoResponse {
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
+  vehicle: VehicleKey;
   arrivalDate: string;
   departureDate: string;
   journeyLatLongTuples: LatLngTuple[];
@@ -56,6 +59,7 @@ export interface CreateStopInput {
   overnightStop: boolean;
   homeBase: boolean;
   cityStop: boolean;
+  vehicle?: VehicleKey;
   arrivalDate: string;
   departureDate: string;
 }
@@ -73,6 +77,7 @@ export interface UpdateStopInput {
   overnightStop?: boolean;
   homeBase?: boolean;
   cityStop?: boolean;
+  vehicle?: VehicleKey;
   arrivalDate?: string;
   departureDate?: string;
   journeyLatLongTuples?: LatLngTuple[];

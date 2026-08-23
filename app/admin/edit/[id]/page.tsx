@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { LatLngTuple } from "leaflet";
 import { CATEGORY_KEYS, StopCategoryFlags } from "@/lib/categories";
+import type { VehicleKey } from "@/lib/vehicles";
 import { StopInfoResponse } from "@/models/StopInfo";
 import StopForm from "@/components/admin/StopForm";
 
@@ -53,6 +54,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
   }
 
   async function handleDetailsSubmit(data: StopCategoryFlags & {
+    vehicle: VehicleKey;
     name: string;
     link: string;
     arrivalDate: string;
@@ -70,6 +72,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
           name: data.name,
           link: data.link,
           ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, data[k]])),
+          vehicle: data.vehicle,
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,
@@ -191,6 +194,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
                 name: stop.name,
                 link: stop.link,
                 ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, stop[k]])),
+                vehicle: stop.vehicle,
                 arrivalDate: formatDateForInput(stop.arrivalDate),
                 departureDate: formatDateForInput(stop.departureDate),
                 latLongTuple: stop.latLongTuple,

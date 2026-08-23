@@ -17,6 +17,7 @@ interface LibraryStats {
 }
 
 const tab: React.CSSProperties = { border: "none", padding: "6px 12px", cursor: "pointer", borderRadius: "4px" };
+const nightsOf = (c: StopCandidateResponse) => Math.round((new Date(c.departureDate).getTime() - new Date(c.arrivalDate).getTime()) / 86400000);
 
 export default function StopCandidateReview() {
   const [status, setStatus] = useState<StopCandidateStatus>("pending");
@@ -28,6 +29,8 @@ export default function StopCandidateReview() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [bulkNights, setBulkNights] = useState(3);
+  const [bulkRunning, setBulkRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const loadStops = useCallback(() => {
@@ -113,6 +116,45 @@ export default function StopCandidateReview() {
     if (updated) setCandidates((cs) => cs.map((x) => (x.id === c.id ? updated : x)));
   }
 
+  async function bulkApprove() {
+    const n = candidates.filter((c) => c.status === "pending" && nightsOf(c) >= bulkNights && c.suggestedName?.trim()).length;
+    if (n === 0) {
+      setMessage(`No pending candidates with ${bulkNights}+ nights.`);
+      return;
+    }
+    if (
+      !confirm(
+        `Approve ${n} candidates with ${bulkNights}+ nights using their suggested names?
+
+` +
+          "Stops are created in date order with photos attached and road routes drawn; candidates near home become Home base. " +
+          "You can rename and categorize them afterwards from the stop list. This takes a few seconds per stop (routing)."
+      )
+    )
+      return;
+    setBulkRunning(true);
+    setMessage(`Approving ${n} candidates… this can take a few minutes.`);
+    try {
+      const r = await fetch("/api/stop-candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "bulkApprove", minNights: bulkNights }),
+      });
+      const res = await r.json();
+      setMessage(
+        `Approved ${res.approved} stops (${res.routed} routed, ${res.homeBase} home base). ` +
+          `${res.skippedShort} shorter candidates${res.skippedUnnamed ? ` and ${res.skippedUnnamed} unnamed` : ""} remain in the queue. ` +
+          "Rename and categorize the new stops from the stop list."
+      );
+      loadStops();
+      load(status);
+    } catch (e) {
+      setMessage(`Failed: ${(e as Error).message}`);
+    } finally {
+      setBulkRunning(false);
+    }
+  }
+
   async function regenerate() {
     if (!confirm("Re-cluster photos? Pending candidates will be replaced (approved/skipped decisions are kept).")) return;
     setRegenerating(true);
@@ -153,7 +195,23 @@ export default function StopCandidateReview() {
           </button>
         ))}
         <span style={{ flex: 1 }} />
-        <button onClick={regenerate} disabled={regenerating} style={{ ...tab, background: "#6c757d", color: "white" }}>
+        {status === "pending" && candidates.length > 0 && (
+          <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <button onClick={bulkApprove} disabled={bulkRunning || regenerating} style={{ ...tab, background: "#28a745", color: "white" }}>
+              {bulkRunning ? "Approving…" : `Bulk approve ${candidates.filter((c) => nightsOf(c) >= bulkNights && c.suggestedName?.trim()).length} with`}
+            </button>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              value={bulkNights}
+              onChange={(e) => setBulkNights(Math.max(1, Number(e.target.value) || 1))}
+              style={{ width: "3.5em", padding: "5px", border: "1px solid #ccc", borderRadius: "4px" }}
+            />
+            + nights
+          </label>
+        )}
+        <button onClick={regenerate} disabled={regenerating || bulkRunning} style={{ ...tab, background: "#6c757d", color: "white" }}>
           {regenerating ? "Clustering…" : "Re-cluster photos"}
         </button>
       </div>

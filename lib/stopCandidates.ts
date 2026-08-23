@@ -3,7 +3,7 @@ import { db, schema } from "@/lib/db";
 import type { StopCandidateRow } from "@/lib/db/schema";
 import { clusterPhotos, type ClusterOptions } from "@/lib/import/cluster";
 import { reverseGeocode } from "@/lib/geocode";
-import { routeStopFromPrevious } from "@/lib/routing";
+import { routeStopFromPrevious, rerouteAllStops } from "@/lib/routing";
 import { createStop, getStops } from "@/lib/stops";
 import { suggestStopPhotos } from "@/lib/photos";
 import { relinkPendingCandidates } from "@/lib/posts";
@@ -278,3 +278,60 @@ export async function approveStopCandidate(
   return { candidate: toResponse(updated), stop: finalStop, routed };
 }
 
+
+// ---- bulk approval ---------------------------------------------------------------
+
+const kmBetween = (aLat: number, aLon: number, bLat: number, bLon: number) => {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const x = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLon - aLon) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(x));
+};
+
+export interface BulkApproveResult {
+  approved: number;
+  skippedShort: number;
+  skippedUnnamed: number;
+  homeBase: number;
+  routed: number;
+}
+
+/**
+ * Approve every pending candidate with at least `minNights` nights, in date
+ * order, using its suggested name. Candidates within 5 km of home are flagged
+ * home base. Shorter/unnamed candidates stay in the queue for manual review.
+ */
+export async function bulkApproveStopCandidates(
+  minNights = 3,
+  home: [number, number],
+  onProgress?: (m: string) => void
+): Promise<BulkApproveResult> {
+  const pending = await getStopCandidates("pending"); // sorted by arrival
+  const result: BulkApproveResult = { approved: 0, skippedShort: 0, skippedUnnamed: 0, homeBase: 0, routed: 0 };
+  for (const c of pending) {
+    const nights = Math.round((new Date(c.departureDate).getTime() - new Date(c.arrivalDate).getTime()) / DAY_MS);
+    if (nights < minNights) {
+      result.skippedShort++;
+      continue;
+    }
+    if (!c.suggestedName?.trim()) {
+      result.skippedUnnamed++;
+      continue;
+    }
+    const homeBase = kmBetween(c.latLongTuple[0], c.latLongTuple[1], home[0], home[1]) < 5;
+    const res = await approveStopCandidate(c.id, {
+      name: homeBase ? "Home base · Tallahassee" : c.suggestedName,
+      latLongTuple: homeBase ? home : undefined,
+      homeBase,
+      route: false, // legs are rebuilt once at the end instead of twice per stop
+    });
+    if (!res) continue;
+    result.approved++;
+    if (homeBase) result.homeBase++;
+    onProgress?.(`${c.arrivalDate.slice(0, 10)} ${res.stop.name} (${nights} nights)`);
+  }
+  if (result.approved > 0) {
+    onProgress?.("drawing road routes…");
+    result.routed = (await rerouteAllStops(false)).routed;
+  }
+  return result;
+}

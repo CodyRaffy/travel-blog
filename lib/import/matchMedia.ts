@@ -17,6 +17,9 @@ const { photos, posts, postCandidates } = schema;
 const MAX_DISTANCE = 8;
 /** A second-best candidate must be at least this much worse, or the match is ambiguous (bursts). */
 const MIN_MARGIN = 3;
+/** Looser acceptance for edited copies, requiring a much bigger gap to the runner-up. */
+const LOOSE_DISTANCE = 12;
+const LOOSE_MARGIN = 6;
 /** Originals are taken before the post goes up; allow long write-ups and a little clock skew. */
 const WINDOW_BEFORE_DAYS = 120;
 const WINDOW_AFTER_DAYS = 2;
@@ -76,7 +79,13 @@ async function matchRow(row: Row, stats: MatchStats, onProgress?: (m: string) =>
         best = { id: p.id, d };
       } else if (d < second) second = d;
     }
-    if (best && best.d <= MAX_DISTANCE && (second - best.d >= MIN_MARGIN || second === Infinity)) {
+    const margin = second === Infinity ? Infinity : second - best!.d;
+    const accept =
+      !!best &&
+      ((best.d <= MAX_DISTANCE && margin >= MIN_MARGIN) ||
+        // edited/cropped copies land a little further away; accept only when nothing else is close
+        (best.d <= LOOSE_DISTANCE && margin >= LOOSE_MARGIN));
+    if (best && accept) {
       media[i] = { ...m, photoId: best.id };
       stats.matched++;
       changed = true;

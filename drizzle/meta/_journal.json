@@ -15,6 +15,13 @@
       "when": 1787441664453,
       "tag": "0001_photo_scan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787448028299,
+      "tag": "0002_overnight_stop",
+      "breakpoints": true
     }
   ]
 }

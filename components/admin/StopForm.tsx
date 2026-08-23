@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LatLngTuple } from "leaflet";
+import HelpIcon, { OVERNIGHT_HELP } from "@/components/admin/HelpIcon";
 
 interface StopFormData {
   name: string;
@@ -9,6 +10,7 @@ interface StopFormData {
   statePark: boolean;
   nationalMonument: boolean;
   nationalPark: boolean;
+  overnightStop: boolean;
   arrivalDate: string;
   departureDate: string;
   latLongTuple: LatLngTuple | null;
@@ -36,6 +38,7 @@ export default function StopForm({
     initialData?.nationalMonument || false
   );
   const [nationalPark, setNationalPark] = useState(initialData?.nationalPark || false);
+  const [overnightStop, setOvernightStop] = useState(initialData?.overnightStop || false);
   const [arrivalDate, setArrivalDate] = useState(initialData?.arrivalDate || "");
   const [departureDate, setDepartureDate] = useState(initialData?.departureDate || "");
 
@@ -51,6 +54,7 @@ export default function StopForm({
       statePark,
       nationalMonument,
       nationalPark,
+      overnightStop,
       arrivalDate,
       departureDate,
       latLongTuple: selectedLocation,
@@ -134,13 +138,21 @@ export default function StopForm({
           />{" "}
           National Park
         </label>
-        <label>
+        <label style={{ marginRight: "16px" }}>
           <input
             type="checkbox"
             checked={nationalMonument}
             onChange={(e) => setNationalMonument(e.target.checked)}
           />{" "}
           National Monument
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={overnightStop}
+            onChange={(e) => setOvernightStop(e.target.checked)}
+          />{" "}
+          Overnight Stop <HelpIcon text={OVERNIGHT_HELP} />
         </label>
       </fieldset>
 

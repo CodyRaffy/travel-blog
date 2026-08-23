@@ -58,6 +58,8 @@ Server components read the DB directly via `lib/*` (all public pages are `force-
 - **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
 - **app/admin/add/page.tsx** - Form to create new stop with map location picker
 - **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
+Stop categories: `statePark`, `nationalPark`, `nationalMonument`, and `overnightStop` (Harvest Hosts, parking lots, boondocking, one-night waypoints — drawn as a small dot on the map and a compact timeline card; help text in `components/admin/HelpIcon.tsx`).
+
 - **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
 - **app/admin/stops/[id]/photos/page.tsx** - Photo curation for a stop (Suggested / All / Kept / Skipped; keep, skip, drag-reorder, cover, caption)
 - **app/admin/posts/page.tsx** - List all blog posts

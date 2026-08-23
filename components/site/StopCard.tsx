@@ -4,7 +4,7 @@ import { fmtRange, fmtNights } from "@/lib/format";
 
 export default function StopCard({ stop }: { stop: StopInfoResponse }) {
   return (
-    <Link href={`/stops/${stop.slug}`} className="card stop-card">
+    <Link href={`/stops/${stop.slug}`} className={`card stop-card${stop.overnightStop ? " stop-card--overnight" : ""}`}>
       {stop.coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={stop.coverUrl} alt="" loading="lazy" />
@@ -13,6 +13,7 @@ export default function StopCard({ stop }: { stop: StopInfoResponse }) {
       )}
       <div className="body">
         <h3>{stop.name}</h3>
+        {stop.overnightStop && <span className="badge">Overnight</span>}
         <div className="dates">
           {fmtRange(stop.arrivalDate, stop.departureDate)} · {fmtNights(stop.arrivalDate, stop.departureDate)}
         </div>

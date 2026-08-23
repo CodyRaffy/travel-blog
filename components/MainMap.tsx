@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from "react-leaflet";
+import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { centerOfUsa, homeLocation } from "@/data/ImportantMarkers";
@@ -50,8 +50,8 @@ export default function MainMap({ stops }: MainMapProps) {
           </Polyline>
         ))}
 
-        {stops.map((stop) => (
-          <Marker key={stop.id} position={stop.latLongTuple} icon={markerIcon}>
+        {stops.map((stop) => {
+          const popup = (
             <Popup className="stop-popup" closeButton={false}>
               {stop.coverUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -69,8 +69,23 @@ export default function MainMap({ stops }: MainMapProps) {
                 </a>
               </div>
             </Popup>
-          </Marker>
-        ))}
+          );
+          // Overnight stops (Harvest Hosts, parking lots, boondocking) are a dot, not a destination pin.
+          return stop.overnightStop ? (
+            <CircleMarker
+              key={stop.id}
+              center={stop.latLongTuple}
+              radius={5}
+              pathOptions={{ color: "#23312b", fillColor: "#ffffff", fillOpacity: 1, weight: 2 }}
+            >
+              {popup}
+            </CircleMarker>
+          ) : (
+            <Marker key={stop.id} position={stop.latLongTuple} icon={markerIcon}>
+              {popup}
+            </Marker>
+          );
+        })}
 
         {first && <Marker position={first.latLongTuple} icon={badgeIcon("Start")} interactive={false} />}
         {last && last !== first && <Marker position={last.latLongTuple} icon={badgeIcon("End")} interactive={false} />}
@@ -79,6 +94,10 @@ export default function MainMap({ stops }: MainMapProps) {
       {years.length > 0 && (
         <div className="map-legend" aria-label="Legend">
           <strong>{stops.length} stops</strong>
+          <span>
+            <span className="swatch" style={{ background: "none", border: "2px solid #23312b", width: 8, height: 8, borderRadius: "50%" }} />
+            overnight stop
+          </span>
           {years.map((y) => (
             <span key={y}>
               <span className="swatch" style={{ background: colorFor(y) }} />

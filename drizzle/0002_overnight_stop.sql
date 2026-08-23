@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `overnight_stop` integer DEFAULT false NOT NULL;

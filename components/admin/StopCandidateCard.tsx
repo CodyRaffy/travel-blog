@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import HelpIcon, { OVERNIGHT_HELP } from "@/components/admin/HelpIcon";
 import { CandidatePhoto, StopCandidateResponse } from "@/models/StopCandidate";
 
 const btn: React.CSSProperties = {
@@ -26,6 +27,7 @@ export interface ApproveData {
   departureDate: string;
   statePark: boolean;
   nationalPark: boolean;
+  overnightStop: boolean;
   nationalMonument: boolean;
 }
 
@@ -62,6 +64,7 @@ export default function StopCandidateCard({
   const [departure, setDeparture] = useState(fmt(c.departureDate));
   const [statePark, setStatePark] = useState(false);
   const [nationalPark, setNationalPark] = useState(false);
+  const [overnightStop, setOvernightStop] = useState(false);
   const [nationalMonument, setNationalMonument] = useState(false);
   const [photos, setPhotos] = useState<CandidatePhoto[] | null>(null);
   const [mergeTarget, setMergeTarget] = useState("");
@@ -153,6 +156,7 @@ export default function StopCandidateCard({
                 <label><input type="checkbox" checked={statePark} onChange={(e) => setStatePark(e.target.checked)} /> State Park</label>
                 <label><input type="checkbox" checked={nationalPark} onChange={(e) => setNationalPark(e.target.checked)} /> National Park</label>
                 <label><input type="checkbox" checked={nationalMonument} onChange={(e) => setNationalMonument(e.target.checked)} /> Nat&apos;l Monument</label>
+                <label><input type="checkbox" checked={overnightStop} onChange={(e) => setOvernightStop(e.target.checked)} /> Overnight stop <HelpIcon text={OVERNIGHT_HELP} /></label>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
                 <button
@@ -164,6 +168,7 @@ export default function StopCandidateCard({
                       departureDate: `${departure}T00:00:00.000Z`,
                       statePark,
                       nationalPark,
+                      overnightStop,
                       nationalMonument,
                     })
                   }

@@ -15,11 +15,18 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
  *  2. A valid Cloudflare Access JWT (Cf-Access-Jwt-Assertion), verified against
  *     the team's public keys. Requires CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD.
  *
- * If Access isn't configured, remote admin requests are denied outright.
+ * CF_ACCESS_AUD (application audience tag) and CF_ACCESS_EMAILS are optional
+ * hardening on top. If Access isn't configured at all, remote admin is denied.
  */
 
 const TEAM_DOMAIN = process.env.CF_ACCESS_TEAM_DOMAIN; // e.g. "raffensperger" for raffensperger.cloudflareaccess.com
+// Optional: pin tokens to one Access application. Without it, any valid login from the team is accepted.
 const AUD = process.env.CF_ACCESS_AUD;
+// Optional extra lock: comma-separated emails that the Access login must match.
+const ALLOWED_EMAILS = (process.env.CF_ACCESS_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 const jwks = TEAM_DOMAIN
   ? createRemoteJWKSet(new URL(`https://${TEAM_DOMAIN}.cloudflareaccess.com/cdn-cgi/access/certs`))
@@ -41,11 +48,18 @@ function isLocalRequest(req: NextRequest): boolean {
 }
 
 async function hasValidAccessToken(req: NextRequest): Promise<boolean> {
-  if (!jwks || !AUD || !TEAM_DOMAIN) return false;
+  if (!jwks || !TEAM_DOMAIN) return false;
   const token = req.headers.get("cf-access-jwt-assertion") ?? req.cookies.get("CF_Authorization")?.value;
   if (!token) return false;
   try {
-    await jwtVerify(token, jwks, { issuer: `https://${TEAM_DOMAIN}.cloudflareaccess.com`, audience: AUD });
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: `https://${TEAM_DOMAIN}.cloudflareaccess.com`,
+      ...(AUD ? { audience: AUD } : {}),
+    });
+    if (ALLOWED_EMAILS.length > 0) {
+      const email = String(payload.email ?? "").toLowerCase();
+      if (!ALLOWED_EMAILS.includes(email)) return false;
+    }
     return true;
   } catch {
     return false;

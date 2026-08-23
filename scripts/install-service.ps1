@@ -26,6 +26,8 @@ param(
     # AUD is the Application Audience tag shown on the Access application.
     [string]$CfAccessTeamDomain = '',
     [string]$CfAccessAud = '',
+    # Optional comma-separated list of emails allowed into the admin (extra check on top of the Access policy).
+    [string]$CfAccessEmails = '',
     # Account allowed to start/stop the service without elevation (for `npm run deploy`).
     # Defaults to whoever runs this script.
     [string]$DeployUser = "$env:USERDOMAIN\$env:USERNAME",
@@ -63,11 +65,10 @@ if (-not (Test-Path $exe)) {
 }
 
 $accessEnv = ''
-if ($CfAccessTeamDomain -and $CfAccessAud) {
-    $accessEnv = @"
-  <env name="CF_ACCESS_TEAM_DOMAIN" value="$CfAccessTeamDomain"/>
-  <env name="CF_ACCESS_AUD" value="$CfAccessAud"/>
-"@
+if ($CfAccessTeamDomain) {
+    $accessEnv = "  <env name=`"CF_ACCESS_TEAM_DOMAIN`" value=`"$CfAccessTeamDomain`"/>`n"
+    if ($CfAccessAud)    { $accessEnv += "  <env name=`"CF_ACCESS_AUD`" value=`"$CfAccessAud`"/>`n" }
+    if ($CfAccessEmails) { $accessEnv += "  <env name=`"CF_ACCESS_EMAILS`" value=`"$CfAccessEmails`"/>`n" }
 }
 
 $xml = @"
@@ -132,7 +133,7 @@ try {
     if (-not $accessEnv) {
         Write-Host "`nAdmin is reachable only from this machine (http://localhost:$Port/admin)." -ForegroundColor Yellow
         Write-Host "To use it remotely, create a Cloudflare Access application for travel.raffensperger.net/admin" -ForegroundColor Yellow
-        Write-Host "and re-run this script with -CfAccessTeamDomain <team> -CfAccessAud <aud>." -ForegroundColor Yellow
+        Write-Host "and re-run this script with -CfAccessTeamDomain <team> (optionally -CfAccessAud <aud> -CfAccessEmails a@b.com,c@d.com)." -ForegroundColor Yellow
     }
 } catch {
     Write-Host "`nService installed but http://localhost:$Port/ is not answering yet: $($_.Exception.Message)" -ForegroundColor Red

@@ -70,6 +70,19 @@ export default function StopCandidateCard({
   const [showingAll, setShowingAll] = useState(false);
   const [loadingAll, setLoadingAll] = useState(false);
   const [mergeTarget, setMergeTarget] = useState("");
+  const [viewing, setViewing] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (viewing === null || !photos) return;
+    const n = photos.length;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewing(null);
+      if (e.key === "ArrowRight") setViewing((i) => (i === null ? null : (i + 1) % n));
+      if (e.key === "ArrowLeft") setViewing((i) => (i === null ? null : (i - 1 + n) % n));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewing, photos]);
 
   useEffect(() => {
     setName(c.suggestedName ?? "");
@@ -142,7 +155,7 @@ export default function StopCandidateCard({
             ) : photos.length === 0 ? (
               <span style={{ color: "#888" }}>No photos</span>
             ) : (
-              photos.map((p) => (
+              photos.map((p, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={p.id}
@@ -150,12 +163,48 @@ export default function StopCandidateCard({
                   alt={p.takenAt ?? ""}
                   title={`${p.takenAt ?? ""}\n${p.path}`}
                   height={90}
-                  style={{ borderRadius: "4px", background: "#eee" }}
+                  onClick={() => setViewing(i)}
+                  style={{ borderRadius: "4px", background: "#eee", cursor: "zoom-in" }}
                   loading="lazy"
                 />
               ))
             )}
           </div>
+          {viewing !== null && photos && photos[viewing] && (
+            <div
+              onClick={() => setViewing(null)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, cursor: "zoom-out" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/photos/${photos[viewing].id}/thumb?size=1280`}
+                alt=""
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: "95vw", maxHeight: "88vh", objectFit: "contain" }}
+              />
+              <div style={{ color: "white", opacity: 0.85, fontSize: "0.9em" }}>
+                {photos[viewing].takenAt} · {viewing + 1} / {photos.length} · ← → to browse, Esc to close
+              </div>
+              {photos.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewing((viewing - 1 + photos.length) % photos.length); }}
+                    style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,.15)", color: "white", border: "none", fontSize: 28, width: 44, height: 64, borderRadius: 8, cursor: "pointer" }}
+                    aria-label="Previous"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewing((viewing + 1) % photos.length); }}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,.15)", color: "white", border: "none", fontSize: 28, width: 44, height: 64, borderRadius: 8, cursor: "pointer" }}
+                    aria-label="Next"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           {photos && photos.length > 0 && !showingAll && c.photoCount > photos.length && (
             <button
               onClick={loadAll}

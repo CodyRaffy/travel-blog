@@ -627,3 +627,6 @@
     width: calc(100% - 1.5rem);
   }
 }
+.rv-marker--west svg {
+  transform: scaleX(-1);
+}

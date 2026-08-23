@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { LatLngTuple } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -27,7 +27,11 @@ const RV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" widt
   <path d="M41 17 l8 6 H41 Z" fill="#2e6b4f"/><rect x="4" y="29" width="57" height="2.5" fill="#b5472f"/>
   <circle cx="17" cy="35" r="4.5" fill="#23312b"/><circle cx="17" cy="35" r="1.6" fill="#fff"/>
   <circle cx="49" cy="35" r="4.5" fill="#23312b"/><circle cx="49" cy="35" r="1.6" fill="#fff"/></svg>`;
-const rvIcon = L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] });
+// The RV is a side view: flip it to face the direction of travel (west = left).
+const rvIcons = {
+  east: L.divIcon({ className: "rv-marker", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
+  west: L.divIcon({ className: "rv-marker rv-marker--west", html: RV_SVG, iconSize: [44, 28], iconAnchor: [22, 26] }),
+};
 
 /** Point a fraction of the way along a polyline, by distance. */
 function pointAlong(line: LatLngTuple[], frac: number): LatLngTuple {
@@ -79,6 +83,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
 
   const first = stops[0];
   const last = stops[stops.length - 1];
+  const facing = useRef<"east" | "west">("east");
 
   // RV location: on a stop, or along the road leg into the next stop.
   const rvAt = useMemo<LatLngTuple | null>(() => {
@@ -88,7 +93,12 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
     const next = stops[idx + 1];
     if (frac < 0.001 || !next) return stops[idx].latLongTuple;
     const leg = next.journeyLatLongTuples.length >= 2 ? next.journeyLatLongTuples : [stops[idx].latLongTuple, next.latLongTuple];
-    return pointAlong(leg, frac);
+    const here = pointAlong(leg, frac);
+    // Heading: compare with a point slightly further along the same leg.
+    const ahead = pointAlong(leg, Math.min(1, frac + 0.01));
+    const dLng = ahead[1] - here[1];
+    if (Math.abs(dLng) > 1e-6) facing.current = dLng < 0 ? "west" : "east";
+    return here;
   }, [stops, position]);
 
   const toggleYear = (y: number) =>
@@ -174,7 +184,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
 
         {first && <Marker position={first.latLongTuple} icon={badgeIcon("Start")} interactive={false} />}
         {last && last !== first && <Marker position={last.latLongTuple} icon={badgeIcon("End")} interactive={false} />}
-        {rvAt && <Marker position={rvAt} icon={rvIcon} interactive={false} zIndexOffset={1000} />}
+        {rvAt && <Marker position={rvAt} icon={rvIcons[facing.current]} interactive={false} zIndexOffset={1000} />}
       </MapContainer>
 
       {allYears.length > 0 && (

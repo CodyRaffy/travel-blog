@@ -32,10 +32,9 @@ const RV_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 46" wid
   <path d="M96 36 a12 7 0 0 1 24 0 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M125 18 h10 l8 7 h-18 Z" fill="#2e6b4f"/>
   <rect x="92" y="33" width="61" height="2" fill="#b5472f"/>
-  <!-- trailer triple axle -->
-  <circle cx="24" cy="37" r="5" fill="#23312b"/><circle cx="24" cy="37" r="1.8" fill="#fff"/>
-  <circle cx="40" cy="37" r="5" fill="#23312b"/><circle cx="40" cy="37" r="1.8" fill="#fff"/>
-  <circle cx="56" cy="37" r="5" fill="#23312b"/><circle cx="56" cy="37" r="1.8" fill="#fff"/>
+  <!-- trailer tandem axle -->
+  <circle cx="30" cy="37" r="5" fill="#23312b"/><circle cx="30" cy="37" r="1.8" fill="#fff"/>
+  <circle cx="46" cy="37" r="5" fill="#23312b"/><circle cx="46" cy="37" r="1.8" fill="#fff"/>
   <!-- dually rear pair + front wheel -->
   <circle cx="103" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="5" fill="#23312b"/><circle cx="112" cy="38" r="1.8" fill="#fff"/>
   <circle cx="140" cy="37" r="5" fill="#23312b"/><circle cx="140" cy="37" r="1.8" fill="#fff"/>

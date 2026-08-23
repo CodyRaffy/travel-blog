@@ -25,6 +25,7 @@ export default function AddStopPage() {
     nationalPark: boolean;
     overnightStop: boolean;
     homeBase: boolean;
+    cityStop: boolean;
     arrivalDate: string;
     departureDate: string;
     latLongTuple: LatLngTuple | null;
@@ -44,6 +45,7 @@ export default function AddStopPage() {
           nationalPark: data.nationalPark,
           overnightStop: data.overnightStop,
           homeBase: data.homeBase,
+          cityStop: data.cityStop,
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,

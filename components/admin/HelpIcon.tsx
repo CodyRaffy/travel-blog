@@ -6,6 +6,8 @@ export const OVERNIGHT_HELP =
 export const HOME_HELP =
   "Back at home base in Tallahassee between legs of the trip. Shown with the house icon on the map.";
 
+export const CITY_HELP = "A city or town visit: the place itself was the point (sightseeing, family, errands), not a park or campground.";
+
 /** Small circled "?" that shows `text` on hover / focus. */
 export default function HelpIcon({ text }: { text: string }) {
   return (

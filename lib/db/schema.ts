@@ -32,6 +32,8 @@ export const stops = sqliteTable(
     overnightStop: integer("overnight_stop", { mode: "boolean" }).notNull().default(false),
     // Back at home base (Tallahassee) between legs of the trip.
     homeBase: integer("home_base", { mode: "boolean" }).notNull().default(false),
+    // A city / town visit: the place itself was the point, not a park.
+    cityStop: integer("city_stop", { mode: "boolean" }).notNull().default(false),
     arrivalDate: text("arrival_date").notNull(),
     departureDate: text("departure_date").notNull(),
     // Waypoints of the journey *to* this stop: [[lat, lng], ...]

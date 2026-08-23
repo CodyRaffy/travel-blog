@@ -12,6 +12,7 @@ export interface StopInfo {
   nationalPark: boolean;
   overnightStop: boolean;
   homeBase: boolean;
+  cityStop: boolean;
   arrivalDate: Date;
   departureDate: Date;
   journeyLatLongTuples: LatLngTuple[];
@@ -31,6 +32,7 @@ export interface StopInfoResponse {
   nationalPark: boolean;
   overnightStop: boolean;
   homeBase: boolean;
+  cityStop: boolean;
   arrivalDate: string;
   departureDate: string;
   journeyLatLongTuples: LatLngTuple[];
@@ -50,6 +52,7 @@ export interface CreateStopInput {
   nationalPark: boolean;
   overnightStop: boolean;
   homeBase: boolean;
+  cityStop: boolean;
   arrivalDate: string;
   departureDate: string;
 }
@@ -65,6 +68,7 @@ export interface UpdateStopInput {
   nationalPark?: boolean;
   overnightStop?: boolean;
   homeBase?: boolean;
+  cityStop?: boolean;
   arrivalDate?: string;
   departureDate?: string;
   journeyLatLongTuples?: LatLngTuple[];

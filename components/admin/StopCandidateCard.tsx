@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import HelpIcon, { OVERNIGHT_HELP, HOME_HELP } from "@/components/admin/HelpIcon";
+import HelpIcon, { OVERNIGHT_HELP, HOME_HELP, CITY_HELP } from "@/components/admin/HelpIcon";
 import { homeLocation } from "@/data/ImportantMarkers";
 import { CandidatePhoto, StopCandidateResponse } from "@/models/StopCandidate";
 
@@ -31,6 +31,7 @@ export interface ApproveData {
   nationalPark: boolean;
   overnightStop: boolean;
   homeBase: boolean;
+  cityStop: boolean;
   nationalMonument: boolean;
 }
 
@@ -77,6 +78,7 @@ export default function StopCandidateCard({
   const [nationalPark, setNationalPark] = useState(false);
   const [overnightStop, setOvernightStop] = useState(false);
   const [homeBase, setHomeBase] = useState(kmFromHome(c.latLongTuple[0], c.latLongTuple[1]) < 5);
+  const [cityStop, setCityStop] = useState(false);
   const [nationalMonument, setNationalMonument] = useState(false);
   const [photos, setPhotos] = useState<CandidatePhoto[] | null>(null);
   const [showingAll, setShowingAll] = useState(false);
@@ -250,6 +252,7 @@ export default function StopCandidateCard({
                 <label><input type="checkbox" checked={nationalMonument} onChange={(e) => setNationalMonument(e.target.checked)} /> Nat&apos;l Monument</label>
                 <label><input type="checkbox" checked={overnightStop} onChange={(e) => setOvernightStop(e.target.checked)} /> Overnight stop <HelpIcon text={OVERNIGHT_HELP} /></label>
                 <label><input type="checkbox" checked={homeBase} onChange={(e) => setHomeBase(e.target.checked)} /> Home base <HelpIcon text={HOME_HELP} /></label>
+                <label><input type="checkbox" checked={cityStop} onChange={(e) => setCityStop(e.target.checked)} /> City / town <HelpIcon text={CITY_HELP} /></label>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
                 <button
@@ -264,6 +267,7 @@ export default function StopCandidateCard({
                       nationalPark,
                       overnightStop,
                       homeBase,
+                      cityStop,
                       nationalMonument,
                     })
                   }

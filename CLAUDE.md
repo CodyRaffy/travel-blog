@@ -46,7 +46,8 @@ public/           - Static assets (images, leaflet icons)
 Server components read the DB directly via `lib/*` (all public pages are `force-dynamic`). Styling is `app/site.css` (tokens: highway-green `--accent`, route-red `--route`; fonts Zilla Slab + Source Sans 3 via `next/font`). Admin pages keep their inline styles.
 
 - **app/page.tsx** - Map home: fetches stops server-side, renders `components/site/HomeMap.tsx` (client wrapper that dynamically imports `MainMap` with `ssr: false`)
-- **components/MainMap.tsx** - react-leaflet map: legs coloured by trip year (legend bottom-left), popups with cover photo/dates/link, Start/End badges, home marker
+- **components/MainMap.tsx** - react-leaflet map: legs coloured by trip year, year-filter chips in the legend, popups with cover photo/dates/link, Start/End badges, home marker, and an RV marker driven by `components/site/TripScrubber.tsx` (slider + play; whole positions = stops, fractions interpolate along the road leg)
+- **app/icon.svg** - favicon (RV)
 - **app/stops/page.tsx** - Timeline of all stops grouped by year (`components/site/StopCard.tsx`)
 - **app/stops/[slug]/page.tsx** - Stop page: hero (cover), prev/next, description/link, `components/site/Gallery.tsx` (client lightbox), posts written there
 - **app/posts/page.tsx**, **app/posts/[id]/page.tsx** - Journal index (newest first, by year) and single post (`components/site/PostCard.tsx`)
@@ -58,7 +59,7 @@ Server components read the DB directly via `lib/*` (all public pages are `force-
 - **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
 - **app/admin/add/page.tsx** - Form to create new stop with map location picker
 - **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
-Stop categories: `statePark`, `nationalPark`, `nationalMonument`, and `overnightStop` (Harvest Hosts, parking lots, boondocking, one-night waypoints — drawn as a small dot on the map and a compact timeline card; help text in `components/admin/HelpIcon.tsx`).
+Stop categories (booleans): `statePark`, `nationalPark`, `nationalMonument`, `overnightStop`, `homeBase` (house icon), `cityStop` (Harvest Hosts, parking lots, boondocking, one-night waypoints — drawn as a small dot on the map and a compact timeline card; help text in `components/admin/HelpIcon.tsx`).
 
 - **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
 - **app/admin/stops/[id]/photos/page.tsx** - Photo curation for a stop (Suggested / All / Kept / Skipped; keep, skip, drag-reorder, cover, caption)

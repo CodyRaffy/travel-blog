@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `city_stop` integer DEFAULT false NOT NULL;

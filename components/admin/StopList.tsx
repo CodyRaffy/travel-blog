@@ -43,6 +43,7 @@ export default function StopList({ stops, onDelete }: StopListProps) {
               {stop.nationalMonument && "National Monument"}
               {stop.overnightStop && "Overnight Stop"}
               {stop.homeBase && "Home Base"}
+              {stop.cityStop && "City / Town"}
             </td>
             <td style={{ padding: "8px" }}>{formatDate(stop.arrivalDate)}</td>
             <td style={{ padding: "8px" }}>{formatDate(stop.departureDate)}</td>

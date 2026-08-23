@@ -34,8 +34,8 @@ export default function StopPhotosPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
       <p style={{ color: "#555", marginTop: 0 }}>
-        {stop.arrivalDate.slice(0, 10)} → {stop.departureDate.slice(0, 10)}. Kept photos are rendered to WebP and shown on the
-        site; everything else stays untouched in Dropbox.
+        {stop.arrivalDate.slice(0, 10)} → {stop.departureDate.slice(0, 10)}. Photos you keep get resized web copies (smaller files in the WebP image format) that the site displays; your
+        originals in Dropbox are never changed, and photos you skip are not copied at all.
       </p>
       <PhotoCurator stop={stop} onStopChange={setStop} />
     </div>

@@ -587,13 +587,15 @@
   text-align: right;
 }
 .trip-scrubber .readout {
+  margin-top: 0.35rem;
+  min-height: 2.6em;
+  line-height: 1.3;
+}
+.trip-scrubber .readout .line {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
   flex-wrap: wrap;
-  margin-top: 0.35rem;
-  min-height: 1.5em;
-  line-height: 1.3;
 }
 .trip-scrubber .readout a {
   text-decoration: none;

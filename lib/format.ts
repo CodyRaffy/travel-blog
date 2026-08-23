@@ -22,6 +22,13 @@ export function fmtRange(arrival: string, departure: string): string {
   return `${fmtDay(arrival)} – ${fmtDay(departure)}`;
 }
 
+/** "December 2020" or "December 2020 – February 2021" */
+export function fmtMonthRange(arrival: string, departure: string): string {
+  const a = fmtDay(arrival, { month: "long", year: "numeric" });
+  const d = fmtDay(departure, { month: "long", year: "numeric" });
+  return a === d ? a : `${a} – ${d}`;
+}
+
 export function nights(arrival: string, departure: string): number {
   return Math.max(0, Math.round((dayOf(departure).getTime() - dayOf(arrival).getTime()) / DAY_MS));
 }

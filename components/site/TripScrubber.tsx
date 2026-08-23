@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { StopInfoResponse } from "@/models/StopInfo";
-import { fmtRange, fmtNights } from "@/lib/format";
+import { fmtNights, fmtMonthRange, fmtDay } from "@/lib/format";
 
 interface TripScrubberProps {
   stops: StopInfoResponse[];
@@ -83,20 +83,25 @@ export default function TripScrubber({ stops, position, onChange }: TripScrubber
       <div className="readout">
         {enRoute ? (
           <>
-            <span className="eyebrow-inline">On the road</span>
-            <strong>
-              {at.name} → {next!.name}
-            </strong>
+            <div className="line">
+              <span className="eyebrow-inline">On the road</span>
+              <strong>
+                {at.name} → {next!.name}
+              </strong>
+            </div>
+            <div className="dates">{fmtDay(at.departureDate, { month: "long", year: "numeric" })}</div>
           </>
         ) : at ? (
           <>
-            <span className="eyebrow-inline">{at.homeBase ? "Home base" : at.overnightStop ? "Overnight stop" : "Stop"}</span>
-            <a href={`/stops/${at.slug}`}>
-              <strong>{at.name}</strong>
-            </a>
-            <span className="dates">
-              {fmtRange(at.arrivalDate, at.departureDate)} · {fmtNights(at.arrivalDate, at.departureDate)}
-            </span>
+            <div className="line">
+              <span className="eyebrow-inline">{at.homeBase ? "Home base" : at.overnightStop ? "Overnight stop" : "Stop"}</span>
+              <a href={`/stops/${at.slug}`}>
+                <strong>{at.name}</strong>
+              </a>
+            </div>
+            <div className="dates">
+              {fmtMonthRange(at.arrivalDate, at.departureDate)} · {fmtNights(at.arrivalDate, at.departureDate)}
+            </div>
           </>
         ) : null}
       </div>

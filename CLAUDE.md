@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run db:studio` - Browse the database in Drizzle Studio
 - `npm run db:import-json` - One-time import of legacy `data/stops.json`
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Parse a Facebook export and stage posts into `post_candidates`
-- `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites	ravel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
+- `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites\travel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
 - `npm run photos:scan [-- --force]` - exiftool scan of the local photo library into `photos` (incremental via `scanned_files`)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Cluster into `stop_candidates`
 
@@ -105,7 +105,7 @@ Schema changes: edit `lib/db/schema.ts`, run `npm run db:generate`, and commit t
 
 ### Deployment & security
 
-- `next.config.js` sets `output: "standalone"`; `scripts/deploy.ps1` publishes `.next/standalone` + `.next/static` + `public` + `drizzle` to `C:\websites	ravel-blog` and restarts the WinSW-wrapped `travel-blog` service (`scripts/install-service.ps1`, elevated, writes `C:\websites\_services	ravel-blog	ravel-blog.xml` with the production env). Production data is in `C:\websites\_data	ravel-blog`.
+- `next.config.js` sets `output: "standalone"`; `scripts/deploy.ps1` publishes `.next/standalone` + `.next/static` + `public` + `drizzle` to `C:\websites\travel-blog` and restarts the WinSW-wrapped `travel-blog` service (`scripts/install-service.ps1`, elevated, writes `C:\websites\_services\travel-blog\travel-blog.xml` with the production env). Production data is in `C:\websites\_data\travel-blog`.
 - `proxy.ts` (Next 16 middleware) gates `/admin`, non-GET `/api/*`, `/api/*-candidates` and `/api/photos/*`: allowed from localhost (no `CF-Connecting-IP` header), or with a valid Cloudflare Access JWT when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are set; otherwise 403. Keep new admin/write routes under those prefixes so they stay covered.
 
 ### Leaflet Integration

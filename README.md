@@ -84,17 +84,17 @@ Re-running the import is safe — posts already staged are skipped.
 The site is served from this machine as the Windows service `travel-blog` on `http://localhost:2323`, exposed as travel.raffensperger.net through a Cloudflare Tunnel.
 
 ```bash
-npm run deploy              # next build (standalone) -> C:\websites	ravel-blog, restart service, health check
+npm run deploy              # next build (standalone) -> C:\websites\travel-blog, restart service, health check
 npm run deploy -- -SkipBuild
 ```
 
 First time only, from an **elevated** PowerShell, after the first `npm run deploy`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\Code	ravel-blog\scripts\install-service.ps1
+powershell -ExecutionPolicy Bypass -File C:\Code\travel-blog\scripts\install-service.ps1
 ```
 
-This installs WinSW as `C:\websites\_services	ravel-blog	ravel-blog.exe`, writes the service definition (environment: `PORT`, `DATABASE_PATH`, `MEDIA_DIR`, `CACHE_DIR`, `PHOTO_LIBRARY_DIR`, `EXIFTOOL`), seeds the server database from `data/travel-blog.db`, and starts the service. Data lives in `C:\websites\_data	ravel-blog\` and survives deploys. Re-run the script to change environment variables.
+This installs WinSW as `C:\websites\_services\travel-blog\travel-blog.exe`, writes the service definition (environment: `PORT`, `DATABASE_PATH`, `MEDIA_DIR`, `CACHE_DIR`, `PHOTO_LIBRARY_DIR`, `EXIFTOOL`), seeds the server database from `data/travel-blog.db`, and starts the service. Data lives in `C:\websites\_data\travel-blog\` and survives deploys. Re-run the script to change environment variables.
 
 **Admin access:** `/admin`, write API calls, and raw photo thumbnails are only allowed from `localhost` on the server (`proxy.ts`). To use admin remotely, create a Cloudflare Access application for `travel.raffensperger.net/admin` (and `/api`), then re-run the installer with `-CfAccessTeamDomain <team> -CfAccessAud <audience-tag>`; the app verifies the Access JWT on every protected request.
 

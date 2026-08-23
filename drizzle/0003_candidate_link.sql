@@ -1,0 +1,1 @@
+ALTER TABLE `stop_candidates` ADD `suggested_link` text;

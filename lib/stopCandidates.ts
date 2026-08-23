@@ -2,9 +2,9 @@ import { and, asc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { StopCandidateRow } from "@/lib/db/schema";
 import { clusterPhotos, type ClusterOptions } from "@/lib/import/cluster";
-import { reverseGeocode } from "@/lib/geocode";
-import { roadRoute } from "@/lib/routing";
-import { createStop, getStops, updateStop } from "@/lib/stops";
+import { reverseGeocode, findNearbyPlace } from "@/lib/geocode";
+import { routeStopFromPrevious } from "@/lib/routing";
+import { createStop, getStops } from "@/lib/stops";
 import { suggestStopPhotos } from "@/lib/photos";
 import type { StopInfoResponse } from "@/models/StopInfo";
 import type { StopCandidateResponse, StopCandidateStatus } from "@/models/StopCandidate";
@@ -15,6 +15,7 @@ function toResponse(row: StopCandidateRow): StopCandidateResponse {
   return {
     id: row.id,
     suggestedName: row.suggestedName,
+    suggestedLink: row.suggestedLink,
     latLongTuple: [row.latitude, row.longitude],
     arrivalDate: row.arrivalDate,
     departureDate: row.departureDate,
@@ -74,14 +75,19 @@ export async function generateStopCandidates(
       continue;
     }
     let name: string | null = null;
+    let link: string | null = null;
     if (opts.geocode !== false) {
-      name = await reverseGeocode(c.latitude, c.longitude);
+      // A named campground/park nearby beats the town/county from reverse geocoding.
+      const place = await findNearbyPlace(c.latitude, c.longitude);
+      name = place?.name ?? (await reverseGeocode(c.latitude, c.longitude));
+      link = place?.website ?? null;
       if (name) result.geocoded++;
     }
     db.insert(stopCandidates)
       .values({
         id: crypto.randomUUID(),
         suggestedName: name,
+        suggestedLink: link,
         latitude: c.latitude,
         longitude: c.longitude,
         arrivalDate: `${c.arrivalDate}T00:00:00.000Z`,
@@ -128,12 +134,32 @@ export async function getCandidatePhotos(id: string, limit = 12) {
     .all();
 }
 
+/**
+ * Look up the nearest named campground/park for a candidate and fill in its
+ * name (only if the current name is still the geocoder's town/county guess or
+ * empty) and website. Returns the place found, if any.
+ */
+export async function lookupStopCandidatePlace(id: string): Promise<{ candidate: StopCandidateResponse; place: { name: string; website: string | null } | null } | null> {
+  const cand = db.select().from(stopCandidates).where(eq(stopCandidates.id, id)).get();
+  if (!cand) return null;
+  const place = await findNearbyPlace(cand.latitude, cand.longitude);
+  const set: Partial<typeof stopCandidates.$inferInsert> = { updatedAt: new Date().toISOString() };
+  if (place) {
+    if (place.website) set.suggestedLink = place.website;
+    const geocoderGuess = await reverseGeocode(cand.latitude, cand.longitude);
+    if (!cand.suggestedName || cand.suggestedName === geocoderGuess) set.suggestedName = place.name;
+  }
+  const row = db.update(stopCandidates).set(set).where(eq(stopCandidates.id, id)).returning().get()!;
+  return { candidate: toResponse(row), place: place ? { name: place.name, website: place.website } : null };
+}
+
 export async function updateStopCandidate(
   id: string,
-  patch: { suggestedName?: string | null; latLongTuple?: [number, number]; arrivalDate?: string; departureDate?: string }
+  patch: { suggestedName?: string | null; suggestedLink?: string | null; latLongTuple?: [number, number]; arrivalDate?: string; departureDate?: string }
 ): Promise<StopCandidateResponse | null> {
   const set: Partial<typeof stopCandidates.$inferInsert> = { updatedAt: new Date().toISOString() };
   if (patch.suggestedName !== undefined) set.suggestedName = patch.suggestedName;
+  if (patch.suggestedLink !== undefined) set.suggestedLink = patch.suggestedLink;
   if (patch.latLongTuple) [set.latitude, set.longitude] = patch.latLongTuple;
   if (patch.arrivalDate) set.arrivalDate = patch.arrivalDate;
   if (patch.departureDate) set.departureDate = patch.departureDate;
@@ -271,16 +297,3 @@ export async function approveStopCandidate(
   return { candidate: toResponse(updated), stop: finalStop, routed };
 }
 
-/** Draw the road route into `stopId` from the stop that precedes it chronologically. */
-export async function routeStopFromPrevious(stopId: string): Promise<boolean> {
-  const all = await getStops(); // sorted by arrival
-  const idx = all.findIndex((s) => s.id === stopId);
-  if (idx <= 0) return false;
-  const prev = all[idx - 1];
-  const cur = all[idx];
-  const line = await roadRoute(prev.latLongTuple, cur.latLongTuple);
-  if (!line) return false;
-  await updateStop(stopId, { journeyLatLongTuples: line });
-  // If a later stop used to follow `prev`, its route now needs to start here.
-  return true;
-}

@@ -22,6 +22,13 @@
       "when": 1787448028299,
       "tag": "0002_overnight_stop",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787452470409,
+      "tag": "0003_candidate_link",
+      "breakpoints": true
     }
   ]
 }

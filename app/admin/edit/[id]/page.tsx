@@ -97,6 +97,25 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  async function handleAutoRoute() {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/stops/${id}/route-from-previous`, { method: "POST" });
+      if (response.ok) {
+        const updated = await response.json();
+        setStop(updated);
+        setWaypoints(updated.journeyLatLongTuples || []);
+      } else {
+        alert((await response.json()).error ?? "Routing failed");
+      }
+    } catch (error) {
+      console.error("Error routing:", error);
+      alert("Routing failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSaveWaypoints() {
     setSaving(true);
     try {
@@ -212,6 +231,23 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
             }}
           >
             <h3>Journey Waypoints</h3>
+            <span style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={handleAutoRoute}
+              disabled={saving}
+              title="Replace the waypoints with a road route from the previous stop (OSRM). Also redraws the next stop's leg."
+              style={{
+                padding: "10px 20px",
+                background: saving ? "#ccc" : "#0070f3",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: saving ? "not-allowed" : "pointer",
+                fontSize: "16px",
+              }}
+            >
+              Draw road route
+            </button>
             <button
               onClick={handleSaveWaypoints}
               disabled={saving}
@@ -227,7 +263,11 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
             >
               {saving ? "Saving..." : "Save Waypoints"}
             </button>
+            </span>
           </div>
+          <p style={{ color: "#555", marginTop: "-8px", marginBottom: "12px" }}>
+            Legs are drawn automatically along roads when a stop is created. Use the editor only to hand-adjust a detour.
+          </p>
           <WaypointEditor
             stopLocation={stop.latLongTuple}
             waypoints={waypoints}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStopById } from "@/lib/stops";
-import { routeStopFromPrevious } from "@/lib/stopCandidates";
+import { routeStopFromPrevious } from "@/lib/routing";
 
 type RouteParams = { params: Promise<{ id: string }> };
 

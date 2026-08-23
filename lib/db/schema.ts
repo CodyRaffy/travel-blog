@@ -117,6 +117,8 @@ export const stopCandidates = sqliteTable(
   {
     id: text("id").primaryKey(),
     suggestedName: text("suggested_name"),
+    // Website of the nearby campground/park found in OSM/Wikidata, if any.
+    suggestedLink: text("suggested_link"),
     latitude: real("latitude").notNull(),
     longitude: real("longitude").notNull(),
     arrivalDate: text("arrival_date").notNull(),

@@ -36,6 +36,19 @@ export default function AdminPage() {
     }
   }
 
+  async function handleRerouteAll() {
+    if (!confirm("Redraw every journey leg along roads, in date order? Hand-edited waypoints will be replaced.")) return;
+    setLoading(true);
+    try {
+      const r = await fetch("/api/stops/reroute", { method: "POST" });
+      const res = await r.json();
+      alert(`Routed ${res.routed} legs${res.failed ? `, ${res.failed} failed` : ""}.`);
+      await fetchStops();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (loading) {
     return <div style={{ padding: "20px" }}>Loading...</div>;
   }
@@ -61,6 +74,13 @@ export default function AdminPage() {
           <Link href="/admin/stops/review" style={{ marginRight: "16px", color: "#0070f3" }}>
             Review photo stops
           </Link>
+          <button
+            onClick={handleRerouteAll}
+            title="Redraw all journey legs along roads (OSRM), in chronological order"
+            style={{ marginRight: "16px", background: "none", border: "1px solid #0070f3", color: "#0070f3", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}
+          >
+            Re-route all legs
+          </button>
           <Link
             href="/admin/add"
             style={{

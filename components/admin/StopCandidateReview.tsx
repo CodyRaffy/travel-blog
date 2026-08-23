@@ -108,6 +108,13 @@ export default function StopCandidateReview() {
     refreshCounts();
   }
 
+  async function lookup(c: StopCandidateResponse) {
+    const res = await patch(c.id, { action: "lookup" });
+    if (!res) return null;
+    setCandidates((cs) => cs.map((x) => (x.id === c.id ? res.candidate : x)));
+    return res.place as { name: string; website: string | null } | null;
+  }
+
   async function rename(c: StopCandidateResponse, name: string) {
     const updated = await patch(c.id, { action: "update", suggestedName: name || null });
     if (updated) setCandidates((cs) => cs.map((x) => (x.id === c.id ? updated : x)));
@@ -186,6 +193,7 @@ export default function StopCandidateReview() {
             onReset={() => simple(c, "reset")}
             onMergeInto={(t) => mergeInto(c, t)}
             onRename={(name) => rename(c, name)}
+            onLookup={() => lookup(c)}
           />
         ))
       )}

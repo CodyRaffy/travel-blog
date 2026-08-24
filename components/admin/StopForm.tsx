@@ -88,12 +88,12 @@ export default function StopForm({
       </label>
 
       <label style={labelStyle}>
-        Link:
+        Link (optional):
         <input
           type="url"
           value={link}
+          placeholder="https://..."
           onChange={(e) => setLink(e.target.value)}
-          required
           style={inputStyle}
         />
       </label>

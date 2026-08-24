@@ -38,6 +38,14 @@ export function fmtNights(arrival: string, departure: string): string {
   return n === 0 ? "day visit" : n === 1 ? "1 night" : `${n} nights`;
 }
 
+import { RV_TRIP_START, RV_TRIP_END } from "@/lib/vehicles";
+
+/** Was this stop part of the years living in the RV, or a trip from home? */
+export function isRvEra(arrivalIso: string): boolean {
+  const d = arrivalIso.slice(0, 10);
+  return d >= RV_TRIP_START && d <= RV_TRIP_END;
+}
+
 export function yearOf(iso: string): number {
   return dayOf(iso).getUTCFullYear();
 }

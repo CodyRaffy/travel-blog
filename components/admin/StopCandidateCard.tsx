@@ -5,7 +5,7 @@ import Link from "next/link";
 import CategoryPicker from "@/components/admin/CategoryPicker";
 import { StopCategoryFlags, emptyFlags } from "@/lib/categories";
 import { VEHICLES, defaultVehicleFor, type VehicleKey } from "@/lib/vehicles";
-import { homeLocation } from "@/data/ImportantMarkers";
+import { homeEraAt } from "@/data/ImportantMarkers";
 import { CandidatePhoto, StopCandidateResponse } from "@/models/StopCandidate";
 
 const btn: React.CSSProperties = {
@@ -32,9 +32,9 @@ export interface ApproveData extends StopCategoryFlags {
   link: string;
 }
 
-const kmFromHome = (lat: number, lng: number) => {
+const kmFromHome = (lat: number, lng: number, whenIso: string) => {
   const toRad = (d: number) => (d * Math.PI) / 180;
-  const [hLat, hLng] = homeLocation;
+  const [hLat, hLng] = homeEraAt(whenIso).latLng;
   const x = Math.sin(toRad(lat - hLat) / 2) ** 2 + Math.cos(toRad(hLat)) * Math.cos(toRad(lat)) * Math.sin(toRad(lng - hLng) / 2) ** 2;
   return 2 * 6371 * Math.asin(Math.sqrt(x));
 };
@@ -74,7 +74,7 @@ export default function StopCandidateCard({
   const [vehicle, setVehicle] = useState<VehicleKey>(defaultVehicleFor(c.arrivalDate));
   const [flags, setFlags] = useState<StopCategoryFlags>(() => ({
     ...emptyFlags(),
-    homeBase: kmFromHome(c.latLongTuple[0], c.latLongTuple[1]) < 5,
+    homeBase: kmFromHome(c.latLongTuple[0], c.latLongTuple[1], c.arrivalDate) < 5,
   }));
   const [photos, setPhotos] = useState<CandidatePhoto[] | null>(null);
   const [showingAll, setShowingAll] = useState(false);

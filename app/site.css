@@ -675,3 +675,34 @@
 .plane-marker svg {
   transition: transform 0.3s ease;
 }
+.map-legend .era-chips {
+  display: flex;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.15rem;
+}
+.map-legend .year-chip.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+.era-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+}
+.era-tabs a {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--card);
+}
+.era-tabs a[aria-current="page"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}

@@ -8,7 +8,7 @@ import { centerOfUsa, homeLocation } from "@/data/ImportantMarkers";
 import { markerIcon } from "@/utils/MarkerIcon";
 import { homeIcon } from "@/utils/HomeIcon";
 import { StopInfoResponse } from "@/models/StopInfo";
-import { fmtRange, fmtNights, yearOf } from "@/lib/format";
+import { fmtRange, fmtNights, yearOf, isRvEra } from "@/lib/format";
 import TripScrubber from "@/components/site/TripScrubber";
 import { VEHICLES, vehicleByKey, type VehicleKey } from "@/lib/vehicles";
 
@@ -104,11 +104,19 @@ function FollowRv({ target, active }: { target: LatLngTuple | null; active: bool
 }
 
 export default function MainMap({ stops: allStops }: MainMapProps) {
-  const allYears = useMemo(() => [...new Set(allStops.map((s) => yearOf(s.arrivalDate)))].sort(), [allStops]);
+  const [era, setEra] = useState<"all" | "rv" | "trips">("all");
+  const eraStops = useMemo(
+    () => allStops.filter((s) => (era === "all" ? true : era === "rv" ? isRvEra(s.arrivalDate) : !isRvEra(s.arrivalDate))),
+    [allStops, era]
+  );
+  const allYears = useMemo(() => [...new Set(eraStops.map((s) => yearOf(s.arrivalDate)))].sort(), [eraStops]);
   const [activeYears, setActiveYears] = useState<Set<number>>(() => new Set(allYears));
+  useEffect(() => {
+    setActiveYears(new Set(allYears));
+  }, [allYears]);
   const colorFor = (year: number) => YEAR_COLORS[allYears.indexOf(year) % YEAR_COLORS.length];
 
-  const stops = useMemo(() => allStops.filter((s) => activeYears.has(yearOf(s.arrivalDate))), [allStops, activeYears]);
+  const stops = useMemo(() => eraStops.filter((s) => activeYears.has(yearOf(s.arrivalDate))), [eraStops, activeYears]);
   const [position, setPosition] = useState(0);
   const [scrubbed, setScrubbed] = useState(false);
   const onScrub = useCallback((p: number) => {
@@ -297,6 +305,19 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
           <strong>
             {stops.length} stops{stops.length !== allStops.length && ` of ${allStops.length}`}
           </strong>
+          <span className="era-chips">
+            {([["all", "All"], ["rv", "RV years"], ["trips", "Trips"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                className={`year-chip${era === key ? " on" : ""}`}
+                onClick={() => setEra(key)}
+                aria-pressed={era === key}
+                title={key === "rv" ? "Living in the fifth wheel, Dec 2020 – Apr 2024" : key === "trips" ? "Trips that started and ended at home" : "Everything"}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
           {allYears.map((y) => (
             <button
               key={y}

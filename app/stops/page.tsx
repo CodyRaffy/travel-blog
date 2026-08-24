@@ -3,13 +3,18 @@ import SiteHeader from "@/components/site/SiteHeader";
 import SiteFooter from "@/components/site/SiteFooter";
 import StopCard from "@/components/site/StopCard";
 import { getStops } from "@/lib/stops";
-import { yearOf, nights } from "@/lib/format";
+import Link from "next/link";
+import { yearOf, nights, isRvEra } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Stops" };
 
-export default async function StopsPage() {
-  const stops = await getStops();
+type Search = { searchParams: Promise<{ era?: string }> };
+
+export default async function StopsPage({ searchParams }: Search) {
+  const { era = "all" } = await searchParams;
+  const all = await getStops();
+  const stops = all.filter((s) => (era === "rv" ? isRvEra(s.arrivalDate) : era === "trips" ? !isRvEra(s.arrivalDate) : true));
   const byYear = new Map<number, typeof stops>();
   for (const s of stops) {
     const y = yearOf(s.arrivalDate);
@@ -27,6 +32,18 @@ export default async function StopsPage() {
           {stops.length} stops and {totalNights.toLocaleString()} nights on the road
           {stops.length > 0 && `, ${yearOf(stops[0].arrivalDate)} to ${yearOf(stops[stops.length - 1].departureDate)}`}.
         </p>
+
+        <nav className="era-tabs" aria-label="Trip filter">
+          <Link href="/stops" aria-current={era === "all" ? "page" : undefined}>
+            All
+          </Link>
+          <Link href="/stops?era=rv" aria-current={era === "rv" ? "page" : undefined}>
+            The RV years
+          </Link>
+          <Link href="/stops?era=trips" aria-current={era === "trips" ? "page" : undefined}>
+            Trips from home
+          </Link>
+        </nav>
 
         <div className="timeline">
           {[...byYear.entries()].map(([year, list]) => (

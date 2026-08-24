@@ -7,7 +7,7 @@ import { routeStopFromPrevious, rerouteAllStops } from "@/lib/routing";
 import { createStop, getStops } from "@/lib/stops";
 import { defaultVehicleFor, RV_TRIP_START, RV_TRIP_END, type VehicleKey } from "@/lib/vehicles";
 import { HOME_RADIUS_KM } from "@/lib/import/config";
-import { homeLocation } from "@/data/ImportantMarkers";
+import { homeLocation, homeEraAt } from "@/data/ImportantMarkers";
 import { suggestStopPhotos } from "@/lib/photos";
 import { relinkPendingCandidates } from "@/lib/posts";
 import type { StopInfoResponse } from "@/models/StopInfo";
@@ -334,10 +334,11 @@ export async function bulkApproveStopCandidates(
       result.skippedUnnamed++;
       continue;
     }
-    const homeBase = kmBetween(c.latLongTuple[0], c.latLongTuple[1], home[0], home[1]) < 5;
+    const era = homeEraAt(c.arrivalDate);
+    const homeBase = kmBetween(c.latLongTuple[0], c.latLongTuple[1], era.latLng[0], era.latLng[1]) < 5;
     const res = await approveStopCandidate(c.id, {
-      name: homeBase ? "Home base · Tallahassee" : c.suggestedName,
-      latLongTuple: homeBase ? home : undefined,
+      name: homeBase ? era.name : c.suggestedName,
+      latLongTuple: homeBase ? [era.latLng[0], era.latLng[1]] : undefined,
       homeBase,
       route: false, // legs are rebuilt once at the end instead of twice per stop
     });

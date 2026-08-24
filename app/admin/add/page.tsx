@@ -21,6 +21,7 @@ export default function AddStopPage() {
 
   async function handleSubmit(data: StopCategoryFlags & {
     vehicle: VehicleKey;
+    flightLeg: boolean;
     name: string;
     link: string;
     arrivalDate: string;
@@ -39,6 +40,7 @@ export default function AddStopPage() {
           link: data.link,
           ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, data[k]])),
           vehicle: data.vehicle,
+          flightLeg: data.flightLeg,
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,

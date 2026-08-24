@@ -71,6 +71,13 @@
       "when": 1787512038185,
       "tag": "0009_vehicle",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787531894405,
+      "tag": "0010_flight_leg",
+      "breakpoints": true
     }
   ]
 }

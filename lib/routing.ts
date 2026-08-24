@@ -43,7 +43,10 @@ export async function routeStopFromPrevious(stopId: string): Promise<boolean> {
   const idx = all.findIndex((s) => s.id === stopId);
   if (idx < 0) return false;
   let ok = false;
-  if (idx > 0) {
+  if (all[idx].flightLeg) {
+    await updateStop(stopId, { journeyLatLongTuples: [] }); // flights have no road line
+    ok = true;
+  } else if (idx > 0) {
     const line = await roadRoute(all[idx - 1].latLongTuple, all[idx].latLongTuple);
     if (line) {
       await updateStop(stopId, { journeyLatLongTuples: line });
@@ -55,8 +58,10 @@ export async function routeStopFromPrevious(stopId: string): Promise<boolean> {
   }
   if (idx < all.length - 1) {
     const next = all[idx + 1];
-    const line = await roadRoute(all[idx].latLongTuple, next.latLongTuple);
-    if (line) await updateStop(next.id, { journeyLatLongTuples: line });
+    if (!next.flightLeg) {
+      const line = await roadRoute(all[idx].latLongTuple, next.latLongTuple);
+      if (line) await updateStop(next.id, { journeyLatLongTuples: line });
+    }
   }
   return ok;
 }
@@ -66,6 +71,11 @@ export async function rerouteAllStops(onlyEmpty = false): Promise<{ routed: numb
   const all = await getStops();
   const result = { routed: 0, failed: 0, skipped: 0 };
   for (let i = 1; i < all.length; i++) {
+    if (all[i].flightLeg) {
+      if (all[i].journeyLatLongTuples.length > 0) await updateStop(all[i].id, { journeyLatLongTuples: [] });
+      result.skipped++;
+      continue;
+    }
     if (onlyEmpty && all[i].journeyLatLongTuples.length > 0) {
       result.skipped++;
       continue;

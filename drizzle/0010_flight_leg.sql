@@ -1,0 +1,1 @@
+ALTER TABLE `stops` ADD `flight_leg` integer DEFAULT false NOT NULL;

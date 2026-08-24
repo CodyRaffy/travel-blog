@@ -38,6 +38,7 @@ function toResponse(row: StopRow): StopInfoResponse {
     homeBase: row.homeBase,
     cityStop: row.cityStop,
     vehicle: row.vehicle as VehicleKey,
+    flightLeg: row.flightLeg,
     arrivalDate: row.arrivalDate,
     departureDate: row.departureDate,
     journeyLatLongTuples: row.journeyLatLongTuples,
@@ -97,6 +98,7 @@ export async function createStop(input: CreateStopInput): Promise<StopInfoRespon
       homeBase: input.homeBase ?? false,
       cityStop: input.cityStop ?? false,
       vehicle: input.vehicle ?? DEFAULT_VEHICLE,
+      flightLeg: input.flightLeg ?? false,
       arrivalDate: input.arrivalDate,
       departureDate: input.departureDate,
       journeyLatLongTuples: [],
@@ -133,6 +135,7 @@ export async function updateStop(
   if (input.homeBase !== undefined) patch.homeBase = input.homeBase;
   if (input.cityStop !== undefined) patch.cityStop = input.cityStop;
   if (input.vehicle !== undefined) patch.vehicle = input.vehicle;
+  if (input.flightLeg !== undefined) patch.flightLeg = input.flightLeg;
   if (input.arrivalDate !== undefined) patch.arrivalDate = input.arrivalDate;
   if (input.departureDate !== undefined) patch.departureDate = input.departureDate;
   if (input.journeyLatLongTuples !== undefined) patch.journeyLatLongTuples = input.journeyLatLongTuples;

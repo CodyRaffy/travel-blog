@@ -38,6 +38,8 @@ export const stops = sqliteTable(
     cityStop: integer("city_stop", { mode: "boolean" }).notNull().default(false),
     // How we travelled for this stop: "fifth_wheel" | "minivan" | "motorhome" (see lib/vehicles.ts).
     vehicle: text("vehicle").notNull().default("fifth_wheel"),
+    // We flew (didn't drive) the leg into this stop: drawn dashed with the airplane, never road-routed.
+    flightLeg: integer("flight_leg", { mode: "boolean" }).notNull().default(false),
     arrivalDate: text("arrival_date").notNull(),
     departureDate: text("departure_date").notNull(),
     // Waypoints of the journey *to* this stop: [[lat, lng], ...]

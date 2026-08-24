@@ -46,6 +46,7 @@ const planeIcon = (bearing: number) =>
 /** Legs without a road route that jump more than a short hop are flights or ferries (Hawaii; Alaska if flown). */
 const FLIGHT_MIN_MILES = 60;
 function isFlightLeg(prev: StopInfoResponse, stop: StopInfoResponse): boolean {
+  if (stop.flightLeg) return true;
   return stop.journeyLatLongTuples.length <= 2 && lengthMiles([prev.latLongTuple, stop.latLongTuple]) > FLIGHT_MIN_MILES;
 }
 

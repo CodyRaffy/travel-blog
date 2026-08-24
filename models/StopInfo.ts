@@ -16,6 +16,7 @@ export interface StopInfo {
   homeBase: boolean;
   cityStop: boolean;
   vehicle: VehicleKey;
+  flightLeg: boolean;
   arrivalDate: Date;
   departureDate: Date;
   journeyLatLongTuples: LatLngTuple[];
@@ -38,6 +39,7 @@ export interface StopInfoResponse {
   homeBase: boolean;
   cityStop: boolean;
   vehicle: VehicleKey;
+  flightLeg: boolean;
   arrivalDate: string;
   departureDate: string;
   journeyLatLongTuples: LatLngTuple[];
@@ -60,6 +62,7 @@ export interface CreateStopInput {
   homeBase: boolean;
   cityStop: boolean;
   vehicle?: VehicleKey;
+  flightLeg?: boolean;
   arrivalDate: string;
   departureDate: string;
 }
@@ -78,6 +81,7 @@ export interface UpdateStopInput {
   homeBase?: boolean;
   cityStop?: boolean;
   vehicle?: VehicleKey;
+  flightLeg?: boolean;
   arrivalDate?: string;
   departureDate?: string;
   journeyLatLongTuples?: LatLngTuple[];

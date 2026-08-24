@@ -55,6 +55,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
 
   async function handleDetailsSubmit(data: StopCategoryFlags & {
     vehicle: VehicleKey;
+    flightLeg: boolean;
     name: string;
     link: string;
     arrivalDate: string;
@@ -73,6 +74,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
           link: data.link,
           ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, data[k]])),
           vehicle: data.vehicle,
+          flightLeg: data.flightLeg,
           arrivalDate: new Date(data.arrivalDate).toISOString(),
           departureDate: new Date(data.departureDate).toISOString(),
           latLongTuple: data.latLongTuple,
@@ -195,6 +197,7 @@ export default function EditStopPage({ params }: { params: Promise<{ id: string 
                 link: stop.link,
                 ...Object.fromEntries(CATEGORY_KEYS.map((k) => [k, stop[k]])),
                 vehicle: stop.vehicle,
+                flightLeg: stop.flightLeg,
                 arrivalDate: formatDateForInput(stop.arrivalDate),
                 departureDate: formatDateForInput(stop.departureDate),
                 latLongTuple: stop.latLongTuple,

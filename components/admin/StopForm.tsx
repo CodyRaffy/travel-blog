@@ -8,6 +8,7 @@ import { VEHICLES, DEFAULT_VEHICLE, type VehicleKey } from "@/lib/vehicles";
 
 interface StopFormData extends StopCategoryFlags {
   vehicle: VehicleKey;
+  flightLeg: boolean;
   name: string;
   link: string;
   arrivalDate: string;
@@ -33,6 +34,7 @@ export default function StopForm({
   const [name, setName] = useState(initialData?.name || "");
   const [link, setLink] = useState(initialData?.link || "");
   const [vehicle, setVehicle] = useState<VehicleKey>(initialData?.vehicle ?? DEFAULT_VEHICLE);
+  const [flightLeg, setFlightLeg] = useState(initialData?.flightLeg ?? false);
   const [flags, setFlags] = useState<StopCategoryFlags>(() => {
     const f = emptyFlags();
     for (const k of CATEGORY_KEYS) f[k] = initialData?.[k] ?? false;
@@ -52,6 +54,7 @@ export default function StopForm({
       link,
       ...flags,
       vehicle,
+      flightLeg,
       arrivalDate,
       departureDate,
       latLongTuple: selectedLocation,
@@ -130,6 +133,10 @@ export default function StopForm({
           </option>
         ))}
       </select>
+      <label style={{ display: "block", margin: "-4px 0 16px" }}>
+        <input type="checkbox" checked={flightLeg} onChange={(e) => setFlightLeg(e.target.checked)} /> We flew here
+        (the leg into this stop is drawn as a dashed flight, not a road route)
+      </label>
 
       <div style={{ marginBottom: "16px" }}>
         <strong>Location:</strong>{" "}

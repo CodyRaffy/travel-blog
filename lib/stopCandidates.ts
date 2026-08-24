@@ -227,6 +227,7 @@ export interface ApproveInput {
   homeBase?: boolean;
   cityStop?: boolean;
   vehicle?: VehicleKey;
+  flightLeg?: boolean;
   /** Generate the road route from the previous stop (default true). */
   route?: boolean;
 }
@@ -259,6 +260,7 @@ export async function approveStopCandidate(
     homeBase: input.homeBase ?? false,
     cityStop: input.cityStop ?? false,
     vehicle: input.vehicle ?? defaultVehicleFor(input.arrivalDate ?? cand.arrivalDate),
+    flightLeg: input.flightLeg ?? false,
     arrivalDate: input.arrivalDate ?? cand.arrivalDate,
     departureDate: input.departureDate ?? cand.departureDate,
   });

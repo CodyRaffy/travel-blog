@@ -26,6 +26,7 @@ const input: React.CSSProperties = {
 
 export interface ApproveData extends StopCategoryFlags {
   vehicle: VehicleKey;
+  flightLeg: boolean;
   name: string;
   arrivalDate: string;
   departureDate: string;
@@ -72,6 +73,7 @@ export default function StopCandidateCard({
   const [departure, setDeparture] = useState(fmt(c.departureDate));
   const [link, setLink] = useState(c.suggestedLink ?? "");
   const [vehicle, setVehicle] = useState<VehicleKey>(defaultVehicleFor(c.arrivalDate));
+  const [flightLeg, setFlightLeg] = useState(false);
   const [flags, setFlags] = useState<StopCategoryFlags>(() => ({
     ...emptyFlags(),
     homeBase: kmFromHome(c.latLongTuple[0], c.latLongTuple[1], c.arrivalDate) < 5,
@@ -254,6 +256,9 @@ export default function StopCandidateCard({
                     ))}
                   </select>
                 </label>
+                <label title="The leg into this stop is drawn as a dashed flight (or ferry, with the boat), not a road route">
+                  <input type="checkbox" checked={flightLeg} onChange={(e) => setFlightLeg(e.target.checked)} /> We flew here
+                </label>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
                 <button
@@ -266,6 +271,7 @@ export default function StopCandidateCard({
                       link: link.trim(),
                       ...flags,
                       vehicle,
+                      flightLeg,
                     })
                   }
                   style={{ ...btn, background: "#28a745" }}

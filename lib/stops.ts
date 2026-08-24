@@ -135,7 +135,11 @@ export async function updateStop(
   if (input.homeBase !== undefined) patch.homeBase = input.homeBase;
   if (input.cityStop !== undefined) patch.cityStop = input.cityStop;
   if (input.vehicle !== undefined) patch.vehicle = input.vehicle;
-  if (input.flightLeg !== undefined) patch.flightLeg = input.flightLeg;
+  if (input.flightLeg !== undefined) {
+    patch.flightLeg = input.flightLeg;
+    // A flown leg has no road line; drop any stale route (unless one is being set explicitly).
+    if (input.flightLeg && input.journeyLatLongTuples === undefined) patch.journeyLatLongTuples = [];
+  }
   if (input.arrivalDate !== undefined) patch.arrivalDate = input.arrivalDate;
   if (input.departureDate !== undefined) patch.departureDate = input.departureDate;
   if (input.journeyLatLongTuples !== undefined) patch.journeyLatLongTuples = input.journeyLatLongTuples;

@@ -233,7 +233,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
                 color: colorFor(yearOf(stop.arrivalDate)),
                 weight: flight ? 2 : 3,
                 opacity: 0.85,
-                dashArray: flight ? "5 16" : undefined,
+                dashArray: flight ? "4 24" : undefined,
               }}
             >
               <Tooltip sticky>

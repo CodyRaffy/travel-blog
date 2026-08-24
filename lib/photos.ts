@@ -65,9 +65,46 @@ export async function stopPhotoCounts(stopId: string): Promise<Record<CurationSt
   return counts;
 }
 
-/** Kept photos with web variants, in display order: what the public site shows. */
+/**
+ * Kept photos in display order: what the public site shows. Any kept photo
+ * still missing web variants gets them rendered on the spot (photos auto-kept
+ * at approval render lazily on first view).
+ */
 export async function getStopGallery(stopId: string): Promise<PhotoResponse[]> {
-  return (await listStopPhotos(stopId, "kept")).filter((p) => p.variants);
+  const kept = await listStopPhotos(stopId, "kept");
+  for (const p of kept) {
+    if (p.variants) continue;
+    try {
+      const row = db.select().from(photos).where(eq(photos.id, p.id)).get()!;
+      const variants = await generateVariants(row);
+      db.update(photos).set({ variants, updatedAt: new Date().toISOString() }).where(eq(photos.id, p.id)).run();
+      p.variants = variants;
+    } catch (err) {
+      console.error(`gallery variant render failed for ${p.path}:`, err);
+    }
+  }
+  return kept.filter((p) => p.variants);
+}
+
+/** Mark every `suggested` photo of a stop as kept (variants render lazily). Returns count. */
+export async function keepSuggestedPhotos(stopId: string): Promise<number> {
+  const suggested = db
+    .select({ id: photos.id })
+    .from(photos)
+    .where(and(eq(photos.stopId, stopId), eq(photos.curationStatus, "suggested")))
+    .all();
+  const max = db
+    .select({ m: sql<number>`coalesce(max(sort_order), -1)` })
+    .from(photos)
+    .where(and(eq(photos.stopId, stopId), eq(photos.curationStatus, "kept")))
+    .get()?.m ?? -1;
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    suggested.forEach((p, i) => {
+      tx.update(photos).set({ curationStatus: "kept", sortOrder: max + 1 + i, updatedAt: now }).where(eq(photos.id, p.id)).run();
+    });
+  });
+  return suggested.length;
 }
 
 // ---- suggestion ----------------------------------------------------------------

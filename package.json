@@ -18,7 +18,8 @@
     "prod": "node scripts/prod.mjs",
     "photos:hash": "tsx scripts/hash-photos.ts",
     "posts:match-media": "tsx scripts/match-facebook-media.ts",
-    "backup": "powershell -ExecutionPolicy Bypass -File scripts/backup.ps1"
+    "backup": "powershell -ExecutionPolicy Bypass -File scripts/backup.ps1",
+    "photos:publish-suggested": "tsx scripts/publish-suggested.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

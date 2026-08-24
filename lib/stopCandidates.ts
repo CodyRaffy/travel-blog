@@ -8,7 +8,7 @@ import { createStop, getStops } from "@/lib/stops";
 import { defaultVehicleFor, RV_TRIP_START, RV_TRIP_END, type VehicleKey } from "@/lib/vehicles";
 import { HOME_RADIUS_KM } from "@/lib/import/config";
 import { homeLocation, homeEraAt } from "@/data/ImportantMarkers";
-import { suggestStopPhotos } from "@/lib/photos";
+import { suggestStopPhotos, keepSuggestedPhotos } from "@/lib/photos";
 import { relinkPendingCandidates } from "@/lib/posts";
 import type { StopInfoResponse } from "@/models/StopInfo";
 import type { StopCandidateResponse, StopCandidateStatus } from "@/models/StopCandidate";
@@ -291,8 +291,9 @@ export async function approveStopCandidate(
 
   let routed = false;
   if (input.route !== false) routed = await routeStopFromPrevious(stop.id);
-  // Pre-pick a gallery so curation starts from a suggestion instead of a blank grid.
+  // Pre-pick a gallery and publish it right away; curation later refines it.
   await suggestStopPhotos(stop.id).catch(() => 0);
+  await keepSuggestedPhotos(stop.id).catch(() => 0);
   // Imported posts waiting in the queue may belong to this new stop.
   await relinkPendingCandidates().catch(() => 0);
 

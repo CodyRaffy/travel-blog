@@ -12,11 +12,11 @@ interface TripScrubberProps {
   /** Road miles driven up to `position`, and for the whole (filtered) trip. */
   miles: number;
   totalMiles: number;
-  /** True while the current leg is a flight. */
-  flying?: boolean;
+  /** "fly" while airborne, "sail" on a water crossing, otherwise driving. */
+  legMode?: "drive" | "fly" | "sail";
 }
 
-export default function TripScrubber({ stops, position, onChange, miles, totalMiles, flying = false }: TripScrubberProps) {
+export default function TripScrubber({ stops, position, onChange, miles, totalMiles, legMode = "drive" }: TripScrubberProps) {
   const [playing, setPlaying] = useState(false);
   const raf = useRef<number | null>(null);
   const last = useRef<number>(0);
@@ -93,7 +93,7 @@ export default function TripScrubber({ stops, position, onChange, miles, totalMi
         {enRoute ? (
           <>
             <div className="line">
-              <span className="eyebrow-inline">{flying ? "In the air" : "On the road"}</span>
+              <span className="eyebrow-inline">{legMode === "fly" ? "In the air" : legMode === "sail" ? "At sea" : "On the road"}</span>
               <strong>
                 {at.name} → {next!.name}
               </strong>

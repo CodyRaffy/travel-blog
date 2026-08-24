@@ -153,7 +153,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
   }, [stops, position, cumulative, legMiles]);
 
   // Vehicle location: on a stop, or along the leg into the next stop (road or flight).
-  const vehicle = useMemo<{ at: LatLngTuple; mode: "drive" | "fly"; bearing: number; kind: VehicleKey } | null>(() => {
+  const vehicle = useMemo<{ at: LatLngTuple; mode: "drive" | "fly" | "sail"; bearing: number; kind: VehicleKey } | null>(() => {
     if (stops.length === 0) return null;
     const idx = Math.min(Math.floor(position), stops.length - 1);
     const frac = position - idx;
@@ -163,7 +163,13 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
     if (isFlightLeg(stops[idx], next)) {
       const a = stops[idx].latLongTuple;
       const b = next.latLongTuple;
-      return { at: [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac], mode: "fly", bearing: bearing(a, b), kind };
+      const at: LatLngTuple = [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac];
+      // A water crossing when the destination's vehicle is the boat; otherwise a flight.
+      if (kind === "boat") {
+        if (Math.abs(b[1] - a[1]) > 1e-6) facing.current = b[1] < a[1] ? "west" : "east";
+        return { at, mode: "sail", bearing: 0, kind };
+      }
+      return { at, mode: "fly", bearing: bearing(a, b), kind };
     }
     const leg = next.journeyLatLongTuples.length >= 2 ? next.journeyLatLongTuples : [stops[idx].latLongTuple, next.latLongTuple];
     const here = pointAlong(leg, frac);
@@ -222,7 +228,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
               }}
             >
               <Tooltip sticky>
-                {index > 0 ? `${stops[index - 1].name} → ${stop.name}${flight ? " (flight)" : ""}` : `To ${stop.name}`}
+                {index > 0 ? `${stops[index - 1].name} → ${stop.name}${flight ? (stop.vehicle === "boat" ? " (by sea)" : " (flight)") : ""}` : `To ${stop.name}`}
               </Tooltip>
             </Polyline>
           );
@@ -279,7 +285,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         {vehicle && (
           <Marker
             position={vehicle.at}
-            icon={vehicle.mode === "fly" ? planeIcon(vehicle.bearing) : vehicleIcons[vehicle.kind][facing.current]}
+            icon={vehicle.mode === "fly" ? planeIcon(vehicle.bearing) : vehicleIcons[vehicle.kind]?.[facing.current] ?? vehicleIcons.fifth_wheel[facing.current]}
             interactive={false}
             zIndexOffset={1000}
           />
@@ -309,7 +315,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         </div>
       )}
 
-      <TripScrubber stops={stops} position={position} onChange={onScrub} miles={miles} totalMiles={cumulative[cumulative.length - 1] ?? 0} flying={vehicle?.mode === "fly"} />
+      <TripScrubber stops={stops} position={position} onChange={onScrub} miles={miles} totalMiles={cumulative[cumulative.length - 1] ?? 0} legMode={vehicle?.mode === "fly" || vehicle?.mode === "sail" ? vehicle.mode : "drive"} />
     </div>
   );
 }

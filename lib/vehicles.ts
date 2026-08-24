@@ -3,7 +3,7 @@
  * driving the leg *into* that stop). Flights are detected automatically from legs
  * with no road route, so there is no "plane" vehicle.
  */
-export type VehicleKey = "fifth_wheel" | "minivan" | "motorhome";
+export type VehicleKey = "fifth_wheel" | "minivan" | "motorhome" | "boat";
 
 export interface Vehicle {
   key: VehicleKey;
@@ -75,6 +75,23 @@ export const VEHICLES: Vehicle[] = [
   <path d="M41 17 l8 6 H41 Z" fill="#2e6b4f"/><rect x="4" y="29" width="57" height="2.5" fill="#b5472f"/>
   <circle cx="17" cy="35" r="4.5" fill="#23312b"/><circle cx="17" cy="35" r="1.6" fill="#fff"/>
   <circle cx="49" cy="35" r="4.5" fill="#23312b"/><circle cx="49" cy="35" r="1.6" fill="#fff"/>
+</svg>`,
+  },
+
+  {
+    key: "boat",
+    label: "Boat / ferry",
+    description: "Cruise or ferry legs — shown as a ship on the water crossings.",
+    size: [52, 26],
+    anchor: [26, 22],
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 52" width="52" height="26">
+  <path d="M6 34 h92 l-10 12 H14 Z" fill="#2e6b4f" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M22 24 h56 v10 H22 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="27" y="27" width="7" height="5" rx="1" fill="#2e6b4f"/><rect x="39" y="27" width="7" height="5" rx="1" fill="#2e6b4f"/>
+  <rect x="51" y="27" width="7" height="5" rx="1" fill="#2e6b4f"/><rect x="63" y="27" width="7" height="5" rx="1" fill="#2e6b4f"/>
+  <path d="M34 14 h28 v10 H34 Z" fill="#fff" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="44" y="6" width="6" height="8" rx="1" fill="#b5472f" stroke="#23312b" stroke-width="2"/>
+  <path d="M4 44 q6 -5 12 0 q6 5 12 0 q6 -5 12 0 q6 5 12 0 q6 -5 12 0 q6 5 12 0 q6 -5 12 0 q6 5 12 0" fill="none" stroke="#3f5fa8" stroke-width="3" stroke-linecap="round"/>
 </svg>`,
   },
 ];

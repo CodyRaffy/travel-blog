@@ -5,40 +5,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - `npm run dev` - Run development server at http://localhost:3000
-- `npm run build` - Build for production
+- `npm run build` - Build for production (check the exit code, not just grep'd output)
 - `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+- `npm run lint` - Run ESLint (currently broken: `next lint` was removed in Next 16)
 - `npm run db:generate` - Generate a SQL migration in `drizzle/` after changing `lib/db/schema.ts`
 - `npm run db:migrate` - Apply migrations manually (the app also applies them automatically on startup)
 - `npm run db:studio` - Browse the database in Drizzle Studio
 - `npm run db:import-json` - One-time import of legacy `data/stops.json`
 - `npm run import:facebook -- <export-dir> [--dry-run]` - Parse a Facebook export and stage posts into `post_candidates`
-- `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites\travel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`; one-time elevated `scripts/install-service.ps1`)
-- `npm run prod -- <script> [args]` - Run any script above against the production data dir (`C:\websites\_data\travel-blog`)
 - `npm run photos:scan [-- --force]` - exiftool scan of the local photo library into `photos` (incremental via `scanned_files`)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Cluster into `stop_candidates`
+- `npm run photos:hash` - Perceptual-hash (dHash) every library photo missing one (resumable; needed for Facebook media matching)
+- `npm run posts:match-media [-- --render]` - Link Facebook post photos to Dropbox originals by hash; `--render` pre-builds variants for approved posts
+- `npm run prod -- <script> [args]` - Run any script above against the production data dir (`C:\websites\_data\travel-blog`)
+- `npm run deploy [-- -SkipBuild]` - Standalone build -> `C:\websites\travel-blog`, restart the `travel-blog` Windows service on :2323 (`scripts/deploy.ps1`)
+- `npm run backup` - Snapshot DB + mirror media into `C:\Dropbox\Backups\travel-blog` (`scripts/backup.ps1`; nightly via elevated `scripts/install-backup-task.ps1`)
+
+One-time elevated setup scripts: `scripts/install-service.ps1` (WinSW service, prod env vars, Cloudflare Access config, deploy-user service rights — re-run it to change any env var) and `scripts/install-backup-task.ps1` (03:15 scheduled task as SYSTEM).
 
 ## Architecture
 
-This is a Next.js 16 (App Router) TypeScript travel blog application that displays trip stops on an interactive Leaflet map. Uses React 19 and Turbopack as the default bundler.
+Next.js 16 (App Router) TypeScript travel blog: 3.5 years of full-time RV travel as an interactive Leaflet map, stop pages, photo galleries and a journal. React 19, Turbopack, SQLite. Runs on the family's home server behind a Cloudflare Tunnel (travel.raffensperger.net).
 
 ### Project Structure
 
 ```
 app/              - Next.js App Router pages and layouts
 app/api/          - API route handlers
-app/admin/        - Admin pages for managing stops
-components/       - React components
-components/admin/ - Admin-specific components
-data/             - SQLite database (travel-blog.db) and media/ (both gitignored), legacy stops.json
-lib/import/       - Importers: config.ts (env-overridable settings), facebook.ts, photoScan.ts, cluster.ts
+app/admin/        - Admin pages (stops, candidates, posts, curation)
+components/       - React components (components/site/ public, components/admin/ admin)
+data/             - Dev SQLite database + media/ + cache/ (gitignored), legacy stops.json, ImportantMarkers.ts
 drizzle/          - Generated SQL migrations (commit these)
-lib/              - Server-side data access functions
+lib/              - Server-side data access
 lib/db/           - Drizzle schema (schema.ts) and shared connection (index.ts)
-scripts/          - One-off maintenance scripts (run with tsx)
+lib/import/       - Importers: config.ts (env-overridable settings), facebook.ts, photoScan.ts, cluster.ts, matchMedia.ts
+scripts/          - CLIs (tsx) and PowerShell deploy/service/backup scripts
 models/           - TypeScript interfaces
-utils/            - Utility functions (map icons)
-public/           - Static assets (images, leaflet icons)
+utils/            - Map icon helpers
+public/           - Static assets (img/, leaflet/); app/icon.svg is the favicon (truck + fifth wheel)
 ```
 
 ### Public site
@@ -46,92 +50,78 @@ public/           - Static assets (images, leaflet icons)
 Server components read the DB directly via `lib/*` (all public pages are `force-dynamic`). Styling is `app/site.css` (tokens: highway-green `--accent`, route-red `--route`; fonts Zilla Slab + Source Sans 3 via `next/font`). Admin pages keep their inline styles.
 
 - **app/page.tsx** - Map home: fetches stops server-side, renders `components/site/HomeMap.tsx` (client wrapper that dynamically imports `MainMap` with `ssr: false`)
-- **components/MainMap.tsx** - react-leaflet map: legs coloured by trip year, year-filter chips in the legend, popups with cover photo/dates/link, Start/End badges, home marker, and an RV marker driven by `components/site/TripScrubber.tsx` (slider + play; whole positions = stops, fractions interpolate along the road leg)
-- **app/icon.svg** - favicon (RV)
-- **app/stops/page.tsx** - Timeline of all stops grouped by year (`components/site/StopCard.tsx`)
-- **app/stops/[slug]/page.tsx** - Stop page: hero (cover), prev/next, description/link, `components/site/Gallery.tsx` (client lightbox), posts written there
-- **app/posts/page.tsx**, **app/posts/[id]/page.tsx** - Journal index (newest first, by year) and single post (`components/site/PostCard.tsx`)
-- **components/site/SiteHeader.tsx** (`overlay` prop for the map page), **SiteFooter.tsx**; **app/not-found.tsx**
-- **lib/format.ts** - `fmtRange`, `fmtNights`, `yearOf`, `fmtDateTime`
+- **components/MainMap.tsx** - react-leaflet map. Legs coloured by trip year; legend has era chips (All / RV years / Trips, via `isRvEra()`) and year-filter chips. Popups show cover photo/dates/link. Marker types: default pin, small dot (overnightStop), house glyph (homeBase), Start/End badges. `components/site/TripScrubber.tsx` drives a vehicle marker along the legs (slider + play; whole positions = stops, fractions interpolate along the polyline) with an odometer of road miles. Legs with `flightLeg` or no road route beyond 60 mi draw dashed ("4 24"): airplane rotated to bearing, or the ship when the destination's vehicle is `boat` ("by sea"). The drive marker faces its direction of travel with debounced flips.
+- **app/stops/page.tsx** - Timeline grouped by year with era tabs (`?era=rv|trips`); **app/stops/[slug]/page.tsx** - Stop page: hero (cover), prev/next, description/link, `components/site/Gallery.tsx` (client lightbox), posts written there
+- **app/posts/page.tsx**, **app/posts/[id]/page.tsx** - Journal index and single post (`components/site/PostCard.tsx`; media shows the matched Dropbox original when available, else the Facebook copy)
+- **components/site/SiteHeader.tsx** (`overlay` prop for the map page), **SiteFooter.tsx**, **StopCard.tsx**; **app/not-found.tsx**
+- **lib/format.ts** - `fmtRange`, `fmtNights`, `fmtMonthRange`, `yearOf`, `fmtDateTime`, `isRvEra`
 
-### Admin Pages
+### Stop model concepts
 
-- **app/admin/page.tsx** - Admin dashboard listing all stops with edit/delete actions
-- **app/admin/add/page.tsx** - Form to create new stop with map location picker
-- **app/admin/edit/[id]/page.tsx** - Edit stop details and journey waypoints with interactive map
-Stop categories are boolean columns on `stops`, defined centrally in `lib/categories.ts` (`STOP_CATEGORIES`: statePark, nationalPark, nationalMonument, armyCorps, overnightStop, homeBase, cityStop; label/badge/help per entry). Forms use `components/admin/CategoryPicker.tsx`; lists and public badges use `categoryBadges()`. To add one: schema column + migration, `models/StopInfo.ts`, `lib/stops.ts` mapping, `lib/stopCandidates.ts` ApproveInput, and an entry in `STOP_CATEGORIES`.
+- Categories are boolean columns, defined centrally in `lib/categories.ts` (`STOP_CATEGORIES`: statePark, nationalPark, nationalMonument, armyCorps, overnightStop, homeBase, cityStop; label/badge/help per entry). Forms use `components/admin/CategoryPicker.tsx`; lists and public badges use `categoryBadges()`. To add one: schema column + migration, `models/StopInfo.ts`, `lib/stops.ts` mapping, `lib/stopCandidates.ts` ApproveInput, and an entry in `STOP_CATEGORIES`.
+- `vehicle` (lib/vehicles.ts: fifth_wheel | minivan | motorhome | boat) is how the family travelled the leg *into* that stop; `defaultVehicleFor()` picks by date (fifth wheel inside `RV_TRIP_START..RV_TRIP_END` = Dec 2020–Apr 2024, else minivan). SVG artwork lives there too.
+- `flightLeg` boolean = "we flew here": the leg is never road-routed (routing clears its waypoints) and always draws dashed; combined with `vehicle: "boat"` it renders as a ferry.
+- Home history is `HOME_ERAS` in `data/ImportantMarkers.ts` (Kilkierane → sold 2022-06-15; Monticello KOA between; 2518 Killarney Way from 2024-04). `homeEraAt(date)` drives home-base detection, naming, placement and icons.
 
-- **app/admin/stops/review/page.tsx** - Review queue for photo-derived stop candidates (map + cards: approve / merge / rename / skip)
-- **app/admin/stops/[id]/photos/page.tsx** - Photo curation for a stop (Suggested / All / Kept / Skipped; keep, skip, drag-reorder, cover, caption)
-- **app/admin/posts/page.tsx** - List all blog posts
-- **app/admin/posts/review/page.tsx** - Review queue for imported post candidates (approve / re-assign stop / skip)
-- **app/admin/posts/new/page.tsx**, **app/admin/posts/[id]/page.tsx** - Create / edit a post
+### Admin
 
-### Admin Components
-
-- **components/admin/StopList.tsx** - Table displaying stops with actions
-- **components/admin/StopForm.tsx** - Reusable form for stop details
-- **components/admin/LocationPicker.tsx** - Map for selecting stop location
-- **components/admin/WaypointEditor.tsx** - Interactive map for adding/removing journey waypoints
-- **components/admin/StopCandidateReview.tsx**, **StopCandidateCard.tsx**, **CandidateMap.tsx** - Stop candidate review UI
-- **components/admin/PhotoCurator.tsx** - Curation grid
-- **components/admin/PostForm.tsx** - Shared form for creating/editing posts
-- **components/admin/PostCandidateReview.tsx** - Import review queue UI
-- **components/admin/MediaStrip.tsx** - Thumbnail row for a post's media
+- **app/admin/page.tsx** - Stop list + tools: "Set vehicle by date range" (PATCH /api/stops), "Re-route all legs", nav
+- **app/admin/add**, **app/admin/edit/[id]** - Stop form (categories, vehicle, "We flew here", dates, map picker) + waypoint editor with "Draw road route"
+- **app/admin/stops/review** - Photo-derived stop candidates: map + cards (sample photos with lightbox + "show all", rename, dates, categories, vehicle, flight flag, website; approve / merge / skip), "Bulk approve N with ≥X nights", "Re-cluster photos"
+- **app/admin/stops/[id]/photos** - Curation grid (Suggested / All / Kept / Skipped; keep/skip incl. from the lightbox with auto-advance, drag-reorder, cover ★, captions)
+- **app/admin/posts**, **/review**, **/new**, **/[id]** - Posts list, imported-post review queue (stop matching + check-in shown), editor
+- Components: StopList, StopForm, CategoryPicker, LocationPicker, WaypointEditor, StopCandidateReview/Card, CandidateMap, PhotoCurator, PostForm, PostCandidateReview, MediaStrip, HelpIcon
 
 ### API Routes
 
-- **app/api/stops/route.ts** - GET all stops, POST create new stop
-- **app/api/stops/[id]/route.ts** - GET, PUT, DELETE single stop
-- **app/api/posts/route.ts**, **app/api/posts/[id]/route.ts** - Posts CRUD (`?stopId=`, `?published=true` filters)
-- **app/api/post-candidates/route.ts** - GET queue + counts; POST re-runs stop matching
-- **app/api/post-candidates/[id]/route.ts** - PATCH `{ action: approve|reject|reset|suggest, stopId? }`
+- **app/api/stops/route.ts** - GET all, POST create (auto-routes the new leg + fixes the next), PATCH set vehicle by date range
+- **app/api/stops/[id]/route.ts** - GET/PUT/DELETE; **[id]/route-from-previous** - POST OSRM re-route; **/api/stops/reroute** - POST rebuild all legs (`?onlyEmpty=true`)
+- **app/api/stops/[id]/gallery** - Public curated photos; **[id]/photos/suggest** - POST pick ~8 (`?target=`)
+- **app/api/stop-candidates/route.ts** - GET queue+counts+library stats; POST re-clusters or `{action:"bulkApprove",minNights}`; **[id]** PATCH approve/reject/reset/merge/update; **[id]/photos** GET sample (`?limit=all`)
+- **app/api/posts**, **[id]** - Posts CRUD; **app/api/post-candidates**, **[id]** - queue (PATCH approve/reject/reset/suggest; POST re-matches)
+- **app/api/photos/route.ts** (GET `?stopId=&status=`), **[id]** (PATCH curationStatus/caption/sortOrder), **reorder**, **[id]/thumb** (cached JPEG; exiftool embedded preview for HEIC/video) - admin, gated by the `/api/photos/` prefix
 - **app/api/media/[...path]/route.ts** - Serves files from `MEDIA_DIR` (path-traversal safe)
-- **app/api/stop-candidates/route.ts**, **[id]/route.ts**, **[id]/photos/route.ts** - Candidate queue; POST re-clusters; PATCH actions approve/reject/reset/merge/update
-- **app/api/photos/route.ts** (GET `?stopId=&status=`), **[id]/route.ts** (PATCH curationStatus/caption/sortOrder), **reorder/route.ts** - admin curation (all gated by the `/api/photos/` prefix)
-- **app/api/stops/[id]/photos/suggest/route.ts** - POST: score + pick ~8 photos (`?target=`)
-- **app/api/stops/[id]/gallery/route.ts** - Public: kept photos with web-variant URLs
-- **app/api/photos/[id]/thumb/route.ts** - Cached JPEG thumbnails (sharp; exiftool embedded preview for HEIC/video)
-- **app/api/stops/[id]/route-from-previous/route.ts** - OSRM road route from the chronologically previous stop
 
 ### Data Layer
 
-- **lib/db/schema.ts** - Drizzle schema. Tables: `stops`, `posts` (blog entries), `photos` (Dropbox-scanned library + curation status), and staging tables `stop_candidates` / `post_candidates` for importer review queues. Timestamps are ISO strings, coordinate lists are JSON columns.
-- **lib/db/index.ts** - Shared better-sqlite3 connection (`db`). Opens `data/travel-blog.db` (override with `DATABASE_PATH`), enables WAL + foreign keys, and runs pending migrations from `drizzle/` on startup.
-- **lib/stops.ts** - Data access functions (getStops, getStopById, getStopBySlug, createStop, updateStop, deleteStop). Maps DB rows to `StopInfoResponse`; slugs are derived from the name and kept unique.
-- **lib/posts.ts** - Posts CRUD, candidate staging/approval, and `suggestStopForDate()` (stop whose stay contains the date; departure day inclusive; tightest range wins; null = ambiguous)
-- **lib/import/facebook.ts** - Parses `your_posts*.json` from a Facebook export (old and new layouts), fixes Facebook's Latin-1-escaped UTF-8 (`fixMojibake`), extracts text/media/place. Built against Facebook's documented format; adjust here if a real export differs.
-- **lib/import/config.ts** - Photo pipeline settings: `PHOTO_LIBRARY_DIR` (C:\Dropbox), `PHOTO_ROOTS`, `TRIP_START`/`TRIP_END` (Dec 2020 – Apr 2024), `EXIFTOOL`, clustering thresholds, Nominatim/OSRM endpoints
-- **lib/import/photoScan.ts** - Walks the library, runs exiftool in batches on new/changed files only (ledger in `scanned_files`), upserts in-range photos. Paths stored relative to the library root with forward slashes and a leading slash. `takenAt` is naive camera-local time.
-- **lib/import/cluster.ts** - Pure clustering: per-day dominant location (5 km grid) → chain days within `CLUSTER_RADIUS_KM` and `CLUSTER_MAX_GAP_DAYS` → drop clusters under `CLUSTER_MIN_DAYS` and `CLUSTER_MIN_PHOTOS`
-- **lib/stopCandidates.ts** - Generate (replaces pending; skips clusters overlapping existing stops or decided candidates), approve (creates stop, attaches cluster photos + unlocated photos in the date range, draws OSRM route), merge, reject, reset
-- **lib/geocode.ts** - Nominatim reverse geocoding, 1 req/s, cached in `geocode_cache` keyed by ~1 km rounded coords
-- **lib/routing.ts** - OSRM `roadRoute()`, thinned to ≤400 points
-- **lib/photos.ts** - Curation: `suggestStopPhotos()` (GPS +, big +, PNG/video -, burst -, spread over time buckets), `setCuration()` (keeping renders WebP `thumb`/`medium`/`large` into `MEDIA_DIR/photos/<id>/`; un-keeping deletes them and clears the stop cover), reorder, public gallery
-- **lib/thumbs.ts** - Thumbnail generation into `CACHE_DIR` (`data/cache`)
-- **lib/media.ts** - `MEDIA_DIR` (default `data/media`), `resolveMediaPath()`, `mediaUrl()`
-- **lib/slug.ts** - `slugify()` helper
-- **data/stops.json** - Legacy JSON data, kept only as the source for `npm run db:import-json`
-- **models/StopInfo.ts** - TypeScript interfaces: `StopInfo`, `StopInfoResponse`, `CreateStopInput`, `UpdateStopInput`
-- **data/ImportantMarkers.ts** - Fixed locations (home, center of USA)
+- **lib/db/schema.ts** - Tables: `stops`, `posts`, `photos` (library index: path, takenAt naive camera-local, GPS, phash, curation status, variants), staging `stop_candidates` / `post_candidates`, `scanned_files` (scan ledger), `geocode_cache`. Timestamps ISO strings, coordinate lists JSON columns.
+- **lib/db/index.ts** - Shared better-sqlite3 connection; `DATABASE_PATH` override, WAL, FKs, auto-migrate from `drizzle/` on startup. NOTE: a brand-new migration can race if parallel build workers all apply it — the dev DB is disposable (delete `data/travel-blog.db*` and rebuild).
+- **lib/stops.ts** - Stops CRUD (unique slugs follow renames; `coverUrl` derived; setting `flightLeg` clears stale waypoints), `setVehicleForRange()`
+- **lib/posts.ts** - Posts CRUD, candidate staging/approval, `suggestStopForDate()` (containing stay → check-in within 30 km/±30 d → most recent stay left ≤14 d before), media URL resolution to upgraded originals
+- **lib/stopCandidates.ts** - Generate (replaces pending; skips spans overlapping existing stops/decisions and near-home clusters outside the RV years), approve (creates stop, attaches photos + unlocated-by-date, pre-suggests gallery, re-matches pending posts, routes), bulk approve (route rebuild once at the end), merge/reject/reset
+- **lib/import/photoScan.ts** - Walks `PHOTO_ROOTS`, exiftool in batches on new/changed files only. Dropbox online-only placeholders (reparse points) are detected, reported, and never treated as deleted.
+- **lib/import/cluster.ts** - Per-day overnight-hour dominant location (5 km grid) → chain days within radius/gap → fold short excursions back into their base stay → drop drive-bys
+- **lib/import/facebook.ts** - Parses `your_posts*`/`profile_posts*` JSON (all export layouts seen), fixes Latin-1-escaped UTF-8, extracts text/media/check-in place
+- **lib/import/matchMedia.ts** - Matches Facebook photos to Dropbox originals by dHash within a 120-day window (≤8 bits + 3 margin, or ≤12 + 6); `ensureVariantsForMedia()` renders variants on post approval
+- **lib/phash.ts** - dHash + hamming; **lib/photos.ts** - curation (suggest/keep/skip/reorder; keeping renders WebP 480/1400/2400 into `MEDIA_DIR/photos/<id>/`; variants still referenced by a post are never deleted)
+- **lib/geocode.ts** (Nominatim, 1 req/s, cached), **lib/routing.ts** (OSRM `roadRoute()` ≤400 pts; `routeStopFromPrevious` also fixes the following leg; `rerouteAllStops`; flight-leg stops are skipped/cleared), **lib/thumbs.ts**, **lib/media.ts**, **lib/slug.ts**, **lib/categories.ts**, **lib/vehicles.ts**
+- **lib/import/config.ts** - `PHOTO_LIBRARY_DIR` (C:\Dropbox), `PHOTO_ROOTS`, scan window `TRIP_START`/`TRIP_END` (2018-09 → 2027), `HOME_RADIUS_KM`, `EXIFTOOL`, clustering thresholds, Nominatim/OSRM endpoints
 
 Curation: only `kept` photos with `variants` are public (`/api/stops/[id]/gallery`, `/api/media/photos/...`). Originals never leave `PHOTO_LIBRARY_DIR`.
 
-Import flows: `photos:scan` → `photos` → `photos:cluster` → `stop_candidates` → admin review → `stops` (photos get `stopId`); Facebook importer → `post_candidates` → admin review → `posts`. Nothing reaches `posts` without approval. Imported and hand-written posts share the `posts` table and editor.
+Import flows: `photos:scan` → `photos` → `photos:cluster` → `stop_candidates` → admin review → `stops` (photos get `stopId`); Facebook importer → `post_candidates` → review → `posts`; `photos:hash` + `posts:match-media` link Facebook copies to originals. Nothing publishes without approval.
 
-Schema changes: edit `lib/db/schema.ts`, run `npm run db:generate`, and commit the new file in `drizzle/`. Never hand-edit generated migrations.
+Schema changes: edit `lib/db/schema.ts`, run `npm run db:generate`, commit the new file in `drizzle/`. Never hand-edit generated migrations.
 
 ### Deployment & security
 
-- `next.config.js` sets `output: "standalone"`; `scripts/deploy.ps1` publishes `.next/standalone` + `.next/static` + `public` + `drizzle` to `C:\websites\travel-blog` and restarts the WinSW-wrapped `travel-blog` service (`scripts/install-service.ps1`, elevated, writes `C:\websites\_services\travel-blog\travel-blog.xml` with the production env). Production data is in `C:\websites\_data\travel-blog`.
-- `proxy.ts` (Next 16 middleware) gates `/admin`, non-GET `/api/*`, `/api/*-candidates` and `/api/photos/*`: allowed from localhost (no `CF-Connecting-IP` header), or with a valid Cloudflare Access JWT when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are set; otherwise 403. Keep new admin/write routes under those prefixes so they stay covered.
+- Dev and prod are separate: dev DB in `data/`, production data in `C:\websites\_data\travel-blog` (db, media, cache). Content review happens against prod (http://localhost:2323/admin or the public host); use `npm run prod -- <script>` for CLIs.
+- `next.config.js`: `output: "standalone"`; `scripts/deploy.ps1` publishes to `C:\websites\travel-blog` and restarts the WinSW `travel-blog` service (deploy user has service start/stop rights; no elevation needed after setup).
+- `proxy.ts` (Next 16 middleware) gates `/admin`, non-GET `/api/*`, `/api/*-candidates` and `/api/photos/*`: allowed from localhost (no `CF-Connecting-IP` header) or with a Cloudflare Access JWT verified against team `CF_ACCESS_TEAM_DOMAIN` (AUD pin and `CF_ACCESS_EMAILS` allow-list optional hardening). Cloudflare Access (One-time PIN provider) covers only `travel.raffensperger.net/admin`; API writes rely on the middleware verifying the domain-wide Access cookie. Keep new admin/write routes under the gated prefixes.
+- Backups: `scripts/backup.ps1` → `C:\Dropbox\Backups\travel-blog` (VACUUM INTO snapshot zipped, 14 kept; media mirrored with robocopy /MIR; service xml). Nightly scheduled task via `scripts/install-backup-task.ps1`.
 
 ### Leaflet Integration
 
 Leaflet requires client-side only rendering. The MainMap component:
 1. Uses `"use client"` directive
-2. Is dynamically imported in page.tsx with `ssr: false`
+2. Is dynamically imported with `ssr: false` (via `components/site/HomeMap.tsx`)
 3. Custom icons reference static assets in `/public/leaflet/` and `/public/img/`
+
+## Gotchas
+
+- Dropbox "free up space" can dehydrate library files to online-only placeholders; the scanner reports them and keeps their index rows, but EXIF/thumbnails need the bytes (Explorer → "Make available offline").
+- Windows shell quoting mangles heredocs/backslashes ("\t" → tab): prefer the Write/Edit tools or python/node scripts in files for multi-line patches; PowerShell here-strings must be single-quoted to keep backticks.
+- Overpass/Nominatim/OSRM are public instances: cache, rate-limit (1 req/s), and never fail hard on them.
 
 ## Documentation
 

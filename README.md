@@ -1,6 +1,12 @@
 # Raffy's on the Road Blog
 
-A travel blog application built with Next.js that displays trip stops on an interactive Leaflet map.
+The record of 3½ years of full-time RV travel (December 2020 – April 2024), plus the trips before and after: an interactive map with a drivable trip slider, stop pages with photo galleries, and a journal imported from Facebook. Live at **travel.raffensperger.net**, served from the home server through a Cloudflare Tunnel.
+
+## The map
+
+- Legs are coloured by trip year, with legend chips to filter by **era** (All / RV years / Trips from home) and by year.
+- The **trip slider** (with ▶ play) drives a marker along the actual road routes, with the stop name, month/year and a road-miles odometer. The marker matches how we travelled: the dually + 38 ft fifth wheel, the minivan (pre/post-RV trips), the rented motorhome (Alaska), a ship on water crossings, or an airplane on flights.
+- Marker shapes: pins for destinations, small dots for overnight stops, a house glyph for home-base stays (Kilkierane, the Monticello KOA between houses, Killarney Way since April 2024).
 
 ## Getting Started
 
@@ -9,108 +15,87 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the map.
+Open [http://localhost:3000](http://localhost:3000) for the map and [/admin](http://localhost:3000/admin) to manage content. The SQLite database (`data/travel-blog.db`) is created and migrated automatically on first run. **Note:** dev and the live site have separate data; content editing normally happens against the live site (`http://localhost:2323/admin`, or remotely — see Admin access).
 
-Open [http://localhost:3000/admin](http://localhost:3000/admin) to manage stops.
+## Content workflow
 
-The SQLite database (`data/travel-blog.db`) is created and migrated automatically on first run. To load the legacy `data/stops.json` into it:
+### 1. Rebuild stops from photos
 
-```bash
-npm run db:import-json
-```
-
-Set `DATABASE_PATH` to store the database somewhere else (e.g. a Docker volume).
-
-### Rebuilding stops from photos
-
-The photo library is read straight from the synced Dropbox folder (default `C:\Dropbox`; override with `PHOTO_LIBRARY_DIR`, `PHOTO_ROOTS`, `TRIP_START`, `TRIP_END`, `EXIFTOOL` — see `lib/import/config.ts`). Requires [exiftool](https://exiftool.org/).
+The photo library is read straight from the synced Dropbox folder (default `C:\Dropbox`; override with `PHOTO_LIBRARY_DIR`, `PHOTO_ROOTS`, `TRIP_START`, `TRIP_END` — see `lib/import/config.ts`). Requires [exiftool](https://exiftool.org/). If Dropbox has made files "online-only", the scan reports them — use Explorer → *Make available offline* first.
 
 ```bash
-npm run photos:scan      # index capture time + GPS for every photo in the trip date range (incremental)
-npm run photos:cluster   # group located photos into candidate stops and name them via Nominatim
+npm run prod -- photos:scan      # index capture time + GPS (incremental)
+npm run prod -- photos:cluster   # group into candidate stops, named via Nominatim
 ```
 
-Then open [http://localhost:3000/admin/stops/review](http://localhost:3000/admin/stops/review): each candidate shows sample photos, dates, and a suggested name. Approve to create the stop (its photos are attached and the road route from the previous stop is drawn with OSRM), merge candidates that are really one stay, or skip. Re-clustering never re-proposes something you've already approved or skipped.
+Review at `/admin/stops/review`: each candidate shows sample photos, dates and a suggested name. Approve (creates the stop, attaches photos, pre-picks a gallery, draws the OSRM road route), merge stays the clustering split, or skip. **Bulk approve** takes every candidate with ≥ N nights in one go. Home stays are auto-detected against the home-of-that-date. Candidates near home outside the RV years are skipped as daily life. Re-clustering never re-proposes decided spans.
 
-### Curating photos
+Per stop you can set categories (state/national park, Army Corps, overnight, home base, city), the **vehicle**, and **"We flew here"** (draws the leg as a dashed flight — pair it with the Boat vehicle for a ferry). The stop list has *Set vehicle by date range* and *Re-route all legs* tools.
 
-From the stop list, **Photos** opens the curation grid for a stop. Approving a candidate already pre-selects ~8 photos (GPS-tagged, spread across the stay, no bursts or screenshots); keep or skip them, browse the rest, drag kept photos to reorder, star one as the cover, add captions. Kept photos are rendered to WebP (480 / 1400 / 2400 px) under the media directory and served to the site; originals stay in Dropbox.
+### 2. Curate photos
 
-### Importing Facebook posts
+**Photos** on a stop opens the curation grid: keep/skip the ~8 suggestions or any of the stop's photos (the enlarge view pages with ← → and keeps/skips with auto-advance), drag to reorder, star a cover, add captions. Photos you keep get resized web copies (WebP, 480/1400/2400 px); originals never leave Dropbox; skipped photos are not copied at all.
 
-1. On Facebook go to Settings → **Download your information**. Choose **JSON** format, date range **All time**, media quality **High**, and include at least **Posts**.
-2. Extract the archive somewhere, then run:
+### 3. Import the Facebook journal
 
-   ```bash
-   npm run import:facebook -- /path/to/extracted-export
-   ```
+1. Facebook → Settings → **Download your information**: JSON, all time, media quality high, at least "Posts".
+2. `npm run prod -- import:facebook -- <extracted-export-dir>` (add `--dry-run` to preview). Media is copied into the site's media directory; re-runs skip what's staged.
+3. Review at `/admin/posts/review`. Posts are matched to the stop whose dates contain them, falling back to the post's check-in location and to "recently left" stops (people post late); approving a stop re-matches pending posts automatically.
+4. Optional photo upgrade: `npm run prod -- photos:hash` then `npm run prod -- posts:match-media` links Facebook's recompressed photos to the full-quality Dropbox originals by perceptual hash; approved posts then display the originals.
 
-   Add `--dry-run` to preview without writing. Post media is copied to `data/media/` (override with `MEDIA_DIR`).
-3. Open [http://localhost:3000/admin/posts/review](http://localhost:3000/admin/posts/review). Each post is matched to the stop whose dates contain it; approve, re-assign, or skip each one. Approved posts become blog entries.
-
-Re-running the import is safe — posts already staged are skipped.
+Hand-written entries use the same posts table and editor (`/admin/posts/new`).
 
 ## Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run db:generate` - Generate a new SQL migration after editing `lib/db/schema.ts`
-- `npm run db:migrate` - Apply pending migrations (also happens automatically at app startup)
-- `npm run db:studio` - Open Drizzle Studio to browse the database
-- `npm run db:import-json` - One-time import of `data/stops.json` into SQLite
-- `npm run import:facebook -- <export-dir> [--dry-run]` - Stage posts from a Facebook export for review
-- `npm run photos:scan [-- --force]` - Index the local photo library (exiftool; incremental)
-- `npm run prod -- <script> [args]` - Run a script against the live site's data directory (e.g. `npm run prod -- photos:scan`)
-- `npm run deploy [-- -SkipBuild]` - Build and publish to the home server (see Deploying)
+- `npm run dev` / `build` / `start` - Next.js dev, production build, production server
+- `npm run db:generate` / `db:migrate` / `db:studio` / `db:import-json` - Migrations and DB tools
+- `npm run photos:scan [-- --force]` - Index the photo library (exiftool; incremental)
 - `npm run photos:cluster [-- --radius 30 --min-days 2 --min-photos 15 --max-gap 7 --no-geocode]` - Propose stop candidates
+- `npm run photos:hash` - Perceptual-hash the library (for media matching; resumable)
+- `npm run posts:match-media [-- --render]` - Link Facebook post photos to Dropbox originals
+- `npm run import:facebook -- <export-dir> [--dry-run]` - Stage Facebook posts for review
+- `npm run prod -- <script> [args]` - Run any of the above against the live site's data
+- `npm run deploy [-- -SkipBuild]` - Build and publish to the home server
+- `npm run backup` - Back up the live database + media into Dropbox
 
 ## API Routes
 
-- `GET /api/stops` - Returns all trip stops as JSON
-- `POST /api/stops` - Create a new stop
-- `GET /api/stops/[id]` - Get a single stop
-- `PUT /api/stops/[id]` - Update a stop
-- `DELETE /api/stops/[id]` - Delete a stop
-- `GET /api/posts?stopId=&published=true` - List posts (newest first); `POST` creates a hand-written post
-- `GET|PUT|DELETE /api/posts/[id]` - Single post
-- `GET /api/post-candidates?status=pending|approved|rejected` - Imported posts awaiting review (`countsOnly=true` for counts); `POST` re-runs stop matching
-- `PATCH /api/post-candidates/[id]` - `{ action: "approve" | "reject" | "reset" | "suggest", stopId? }`
-- `GET /api/media/[...path]` - Serves files from the media directory
-- `GET /api/stop-candidates?status=` - Photo-derived stop candidates + library stats; `POST` re-clusters
-- `PATCH /api/stop-candidates/[id]` - `{ action: "approve" | "reject" | "reset" | "merge" | "update", ... }`
-- `GET /api/stop-candidates/[id]/photos` - Sample photos for a candidate
-- `GET /api/stops/[id]/gallery` - Public curated photos for a stop
-- `POST /api/stops/[id]/photos/suggest?target=8`, `GET /api/photos?stopId=&status=`, `PATCH /api/photos/[id]`, `POST /api/photos/reorder` - Curation (admin)
-- `GET /api/photos/[id]/thumb?size=320` - JPEG thumbnail of a library photo (cached in `data/cache/`)
-- `POST /api/stops/[id]/route-from-previous` - Redraw a stop's journey line with OSRM road routing
+Public: `GET /api/stops`, `GET /api/stops/[id]`, `GET /api/stops/[id]/gallery`, `GET /api/posts?stopId=&published=true`, `GET /api/posts/[id]`, `GET /api/media/[...path]`.
+
+Admin (localhost or Cloudflare Access login): stop CRUD and `PATCH /api/stops` (vehicle by date range), `POST /api/stops/reroute` and `/api/stops/[id]/route-from-previous`, stop-candidate queue (`/api/stop-candidates`, actions approve/reject/reset/merge/update/bulkApprove), post CRUD and post-candidate queue, curation (`/api/photos*`, `/api/stops/[id]/photos/suggest`), library thumbnails (`/api/photos/[id]/thumb`).
 
 ## Deploying to the home server
 
-The site is served from this machine as the Windows service `travel-blog` on `http://localhost:2323`, exposed as travel.raffensperger.net through a Cloudflare Tunnel.
+The site runs as the Windows service `travel-blog` on `http://localhost:2323`, exposed as travel.raffensperger.net through a Cloudflare Tunnel.
 
 ```bash
 npm run deploy              # next build (standalone) -> C:\websites\travel-blog, restart service, health check
-npm run deploy -- -SkipBuild
 ```
 
-First time only, from an **elevated** PowerShell, after the first `npm run deploy`:
+One-time setup, each from an **elevated** PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\Code\travel-blog\scripts\install-service.ps1
+# service (WinSW), production env, Cloudflare Access config, deploy rights
+powershell -ExecutionPolicy Bypass -File C:\Code\travel-blog\scripts\install-service.ps1 `
+    -CfAccessTeamDomain <team> [-CfAccessAud <aud>] [-CfAccessEmails a@b.com,c@d.com]
+
+# nightly 03:15 backup task
+powershell -ExecutionPolicy Bypass -File C:\Code\travel-blog\scripts\install-backup-task.ps1
 ```
 
-This installs WinSW as `C:\websites\_services\travel-blog\travel-blog.exe`, writes the service definition (environment: `PORT`, `DATABASE_PATH`, `MEDIA_DIR`, `CACHE_DIR`, `PHOTO_LIBRARY_DIR`, `EXIFTOOL`), seeds the server database from `data/travel-blog.db`, and starts the service. Data lives in `C:\websites\_data\travel-blog\` and survives deploys. Re-run the script to change environment variables.
+Production data (database, media, thumbnail cache) lives in `C:\websites\_data\travel-blog\` and survives deploys. Re-run the installer to change any environment variable.
 
-**Admin access:** `/admin`, write API calls, and raw photo thumbnails are only allowed from `localhost` on the server (`proxy.ts`). To use admin remotely, create a Cloudflare Access application for `travel.raffensperger.net/admin` (and `/api`), then re-run the installer with `-CfAccessTeamDomain <team> -CfAccessAud <audience-tag>`; the app verifies the Access JWT on every protected request.
+**Admin access:** `/admin`, write API calls and raw library thumbnails are allowed from localhost on the server, or remotely through a Cloudflare Access application on `travel.raffensperger.net/admin` (One-time PIN — an emailed code; no Cloudflare account needed for users). The app verifies the Access token on every protected request, optionally pinned to the app's AUD tag and an email allow-list.
+
+**Backups:** `npm run backup` (and the nightly task) writes to `C:\Dropbox\Backups\travel-blog\` — a zipped consistent DB snapshot (last 14 kept) plus a mirror of the media directory — which Dropbox then syncs offsite. ~2.3 GB today.
 
 ## Tech Stack
 
-- [Next.js 16](https://nextjs.org/) (App Router, Turbopack)
+- [Next.js 16](https://nextjs.org/) (App Router, Turbopack, standalone output)
 - [React 19](https://react.dev/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Leaflet](https://leafletjs.com/) / [React Leaflet](https://react-leaflet.js.org/)
-- [sharp](https://sharp.pixelplumbing.com/) for thumbnails, [exiftool](https://exiftool.org/) for photo metadata
-- [Nominatim](https://nominatim.org/) reverse geocoding and [OSRM](http://project-osrm.org/) road routing (public instances, cached)
 - [SQLite](https://sqlite.org/) via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) + [Drizzle ORM](https://orm.drizzle.team/)
+- [sharp](https://sharp.pixelplumbing.com/) for image variants/thumbnails, [exiftool](https://exiftool.org/) for photo metadata
+- [Nominatim](https://nominatim.org/) reverse geocoding and [OSRM](http://project-osrm.org/) road routing (public instances, cached and rate-limited)
+- Hosting: Windows service (WinSW) + [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) + [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) for admin login

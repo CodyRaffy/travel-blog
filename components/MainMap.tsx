@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L, { LatLngTuple } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { centerOfUsa, homeLocation, homeEraAt } from "@/data/ImportantMarkers";
+import { centerOfUsa, homeLocation } from "@/data/ImportantMarkers";
 import { markerIcon } from "@/utils/MarkerIcon";
-import { homeIcon, killarneyIcon } from "@/utils/HomeIcon";
+import { homeIcon } from "@/utils/HomeIcon";
 import { StopInfoResponse } from "@/models/StopInfo";
 import { fmtRange, fmtNights, yearOf, isRvEra } from "@/lib/format";
 import TripScrubber from "@/components/site/TripScrubber";
@@ -217,7 +217,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
         <FollowRv target={rvAt} active={scrubbed} />
 
         {!allStops.some((s) => s.homeBase) && (
-          <Marker position={homeLocation} icon={killarneyIcon}>
+          <Marker position={homeLocation} icon={homeIcon}>
             <Tooltip>Home · Tallahassee, FL</Tooltip>
           </Marker>
         )}
@@ -266,12 +266,7 @@ export default function MainMap({ stops: allStops }: MainMapProps) {
           const handlers = { click: () => onScrub(index) };
           if (stop.homeBase)
             return (
-              <Marker
-                key={stop.id}
-                position={stop.latLongTuple}
-                icon={homeEraAt(stop.arrivalDate).from === "2024-04-01" ? killarneyIcon : homeIcon}
-                eventHandlers={handlers}
-              >
+              <Marker key={stop.id} position={stop.latLongTuple} icon={homeIcon} eventHandlers={handlers}>
                 {popup}
               </Marker>
             );

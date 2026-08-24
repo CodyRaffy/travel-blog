@@ -53,14 +53,19 @@ export const VEHICLES: Vehicle[] = [
     key: "minivan",
     label: "Minivan",
     description: "Road trips before and after the RV years.",
-    size: [46, 22],
-    anchor: [23, 20],
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 44" width="46" height="22">
-  <path d="M4 34 V22 a4 4 0 0 1 4 -4 h14 l10 -9 h30 a4 4 0 0 1 3 1.5 l12 11.5 h8 a3 3 0 0 1 3 3 v9 Z" fill="#3f5fa8" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M24 18 l8 -7 h12 v7 Z" fill="#2a3338"/><path d="M48 11 h11 l8 7 H48 Z" fill="#2a3338"/>
-  <rect x="4" y="30" width="84" height="2" fill="#23312b" opacity="0.35"/>
-  <circle cx="22" cy="35" r="5" fill="#23312b"/><circle cx="22" cy="35" r="1.8" fill="#fff"/>
-  <circle cx="70" cy="35" r="5" fill="#23312b"/><circle cx="70" cy="35" r="1.8" fill="#fff"/>
+    size: [48, 23],
+    anchor: [24, 21],
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 46" width="48" height="23">
+  <!-- boxy minivan: near-vertical tail, long flat roof, short sloped nose -->
+  <path d="M6 36 V14 a4 4 0 0 1 4 -4 H62 l16 3 a6 6 0 0 1 5 4 l3 8 a3 3 0 0 1 3 3 v8 Z" fill="#3f5fa8" stroke="#23312b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M12 14 h16 v9 H12 Z" fill="#2a3338"/>
+  <path d="M32 14 h16 v9 H32 Z" fill="#2a3338"/>
+  <path d="M52 14 h12 l11 9 H52 Z" fill="#2a3338"/>
+  <!-- sliding door seam -->
+  <path d="M50 14 v20" stroke="#2a3338" stroke-width="1.5" opacity="0.6"/>
+  <rect x="6" y="31" width="83" height="2" fill="#23312b" opacity="0.35"/>
+  <circle cx="24" cy="37" r="5" fill="#23312b"/><circle cx="24" cy="37" r="1.8" fill="#fff"/>
+  <circle cx="74" cy="37" r="5" fill="#23312b"/><circle cx="74" cy="37" r="1.8" fill="#fff"/>
 </svg>`,
   },
   {
